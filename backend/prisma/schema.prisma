@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Local {
+  PELLEGRINI
+  SUR
+  NORTE
+  FISHERTON
+  SANTA_FE
+  SAN_NICOLAS
+  FABRICA
+}
+
+enum Rol {
+  VENDEDOR
+  PRODUCCION
+  ADMINISTRADOR
+}
+
+enum EstadoPedido {
+  PENDIENTE_APROBACION
+  RECHAZADO
+  EN_PRODUCCION
+  TERMINADO
+  RECIBIDO_EN_LOCAL
+  ENTREGADO
+}
+
+enum TipoPrenda {
+  REMERA
+  CAMPERA
+}
+
+enum NombreEtapa {
+  CORTE
+  UNION
+  BORDADO
+  ESTAMPADO
+  CONFECCION
+  TERMINADO
+  ENTREGA_A_LOCAL
+}
+
+model Usuario {
+  id             Int      @id @default(autoincrement())
+  nombre         String
+  email          String   @unique
+  password       String
+  rol            Rol
+  localPrincipal Local?
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  pedidosCreados    Pedido[]          @relation("PedidoCreador")
+  etapasCompletadas EtapaProduccion[]
+  logs              Log[]
+  refreshTokens     RefreshToken[]
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  usuarioId Int
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Pedido {
+  id                       Int          @id @default(autoincrement())
+  nombre                   String
+  apellido                 String
+  apodo                    String?
+  colegio                  String
+  numeroContrato           String
+  fechaIngreso             DateTime     @default(now())
+  costoTotal               Float
+  sena                     Float
+  fechaEntregaComprometida DateTime
+  localTomoPedido          Local
+  localEntregaAsignado     Local?
+  estado                   EstadoPedido @default(PENDIENTE_APROBACION)
+  motivoRechazo            String?
+
+  creadorId Int
+  creador   Usuario @relation("PedidoCreador", fields: [creadorId], references: [id])
+
+  prendas Prenda[]
+  logs    Log[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Prenda {
+  id       Int        @id @default(autoincrement())
+  tipo     TipoPrenda
+  talle    String
+  pedidoId Int
+  pedido   Pedido     @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  tieneBordado   Boolean @default(false)
+  tieneEstampado Boolean @default(false)
+
+  etapas EtapaProduccion[]
+}
+
+model EtapaProduccion {
+  id          Int         @id @default(autoincrement())
+  nombre      NombreEtapa
+  orden       Int
+  prendaId    Int
+  prenda      Prenda      @relation(fields: [prendaId], references: [id], onDelete: Cascade)
+  fechaInicio DateTime?
+  fechaFin    DateTime?
+  completada  Boolean     @default(false)
+  usuarioId   Int?
+  usuario     Usuario?    @relation(fields: [usuarioId], references: [id])
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  accion    String
+  entidad   String
+  entidadId Int
+  detalle   String?
+  usuarioId Int
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  pedidoId  Int?
+  pedido    Pedido?  @relation(fields: [pedidoId], references: [id])
+  createdAt DateTime @default(now())
+}
