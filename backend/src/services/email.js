@@ -27,7 +27,12 @@ const LOCAL_LABELS = {
 };
 
 async function notificarNuevoPedido(pedido) {
-  if (!process.env.SMTP_USER) return;
+  console.log('[EMAIL] SMTP_USER:', process.env.SMTP_USER);
+  console.log('[EMAIL] SMTP_PASS definido:', !!process.env.SMTP_PASS);
+  if (!process.env.SMTP_USER) {
+    console.log('[EMAIL] Sin SMTP_USER, saliendo');
+    return;
+  }
 
   const admins = await prisma.usuario.findMany({
     where: { rol: 'ADMINISTRADOR', activo: true },
@@ -58,12 +63,15 @@ async function notificarNuevoPedido(pedido) {
   `;
 
   const transporter = createTransport();
+  const destinatarios = admins.map((a) => a.email).join(',');
+  console.log('[EMAIL] Enviando a:', destinatarios);
   await transporter.sendMail({
     from: process.env.SMTP_FROM,
-    to: admins.map((a) => a.email).join(','),
+    to: destinatarios,
     subject: `[InCollege] Nuevo pedido: ${pedido.nombre} ${pedido.apellido} - ${pedido.colegio}`,
     html,
   });
+  console.log('[EMAIL] Enviado OK');
 }
 
 module.exports = { notificarNuevoPedido };
