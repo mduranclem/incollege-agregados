@@ -51,7 +51,7 @@ export default function Sidebar({ open, onClose }) {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-800">
-        <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white font-bold text-sm">IC</div>
+        <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center"><img src="https://i.imgur.com/M4GONM5.png" alt="InCollege" className="w-full h-full object-contain" /></div>
         <div>
           <p className="text-white font-bold text-sm leading-none">InCollege</p>
           <p className="text-gray-500 text-xs">Sistema de Agregados</p>

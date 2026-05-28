@@ -29,8 +29,8 @@ export default function Login() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-brand rounded-2xl mb-4">
-            <span className="text-white font-bold text-2xl">IC</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 overflow-hidden">
+            <img src="https://i.imgur.com/M4GONM5.png" alt="InCollege" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-white">InCollege</h1>
           <p className="text-gray-400 text-sm mt-1">Sistema de Agregados</p>

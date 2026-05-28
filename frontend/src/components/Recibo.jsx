@@ -11,10 +11,7 @@ export default function Recibo({ pedido }) {
     <div className="print-only bg-white text-black p-8 rounded-xl border border-gray-200 font-sans max-w-md mx-auto" style={{ fontFamily: 'Arial, sans-serif' }}>
       {/* Header */}
       <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-          <rect width="48" height="48" rx="10" fill="#2EC4A0"/>
-          <text x="9" y="33" fontSize="20" fontWeight="bold" fill="white">IC</text>
-        </svg>
+        <img src="https://i.imgur.com/M4GONM5.png" alt="InCollege" width="48" height="48" style={{ borderRadius: '10px', objectFit: 'contain' }} />
         <div>
           <p className="text-xl font-bold text-gray-900">InCollege</p>
           <p className="text-sm text-gray-500">Local {LOCAL_LABEL[pedido.localTomoPedido]}</p>
