@@ -35,7 +35,7 @@ export default function Dashboard() {
   const { tomados = 0, enProduccion = 0, terminados = 0, entregados = 0, proximos = [] } = data || {};
 
   const hoy = new Date();
-  const en3dias = addDays(hoy, 3);
+  const en7dias = addDays(hoy, 7);
 
   return (
     <div className="space-y-6">
@@ -50,12 +50,12 @@ export default function Dashboard() {
       </div>
 
       {/* Alertas de vencimiento */}
-      {proximos.filter((p) => isBefore(new Date(p.fechaEntregaComprometida), en3dias)).length > 0 && (
+      {proximos.filter((p) => isBefore(new Date(p.fechaEntregaComprometida), en7dias)).length > 0 && (
         <div className="card border-yellow-500/30 bg-yellow-500/5">
-          <h2 className="text-sm font-semibold text-yellow-400 mb-3">⚠️ Entregas próximas a vencer (3 días)</h2>
+          <h2 className="text-sm font-semibold text-yellow-400 mb-3">⚠️ Entregas próximas a vencer (1 semana)</h2>
           <div className="space-y-2">
             {proximos
-              .filter((p) => isBefore(new Date(p.fechaEntregaComprometida), en3dias))
+              .filter((p) => isBefore(new Date(p.fechaEntregaComprometida), en7dias))
               .map((p) => (
                 <button
                   key={p.id}
