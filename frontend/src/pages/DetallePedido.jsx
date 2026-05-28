@@ -24,7 +24,6 @@ export default function DetallePedido() {
   const [modalLocal, setModalLocal] = useState(false);
   const [motivoRechazo, setMotivoRechazo] = useState('');
   const [localAsignado, setLocalAsignado] = useState('');
-  const [configPrendas, setConfigPrendas] = useState({});
   const [showRecibo, setShowRecibo] = useState(false);
 
   const { data: pedido, isLoading } = useQuery({
@@ -35,14 +34,7 @@ export default function DetallePedido() {
   function invalidate() { qc.invalidateQueries({ queryKey: ['pedido', id] }); }
 
   const aprobar = useMutation({
-    mutationFn: () => {
-      const configuracionPrendas = pedido.prendas.map((p) => ({
-        prendaId: p.id,
-        tieneBordado: !!configPrendas[p.id]?.bordado,
-        tieneEstampado: !!configPrendas[p.id]?.estampado,
-      }));
-      return api.put(`/pedidos/${id}/aprobar`, { configuracionPrendas }).then((r) => r.data);
-    },
+    mutationFn: () => api.put(`/pedidos/${id}/aprobar`).then((r) => r.data),
     onSuccess: () => { invalidate(); setModalAprobar(false); },
   });
 
@@ -126,9 +118,9 @@ export default function DetallePedido() {
         {pedido.prendas.map((prenda) => (
           <div key={prenda.id} className="border border-gray-800 rounded-lg p-4">
             <p className="font-semibold text-white mb-3">
-              {prenda.tipo === 'REMERA' ? '👕' : '🧥'} {prenda.tipo} · Talle {prenda.talle}
+              {['REMERA','CHOMBA'].includes(prenda.tipo) ? '👕' : '🧥'} {prenda.tipo} · Talle {prenda.talle}
               {prenda.tieneBordado && <span className="ml-2 text-xs badge bg-purple-500/15 text-purple-400">Bordado</span>}
-              {prenda.tieneEstampado && <span className="ml-2 text-xs badge bg-orange-500/15 text-orange-400">Estampado</span>}
+              {prenda.tieneEstampado && <span className="ml-2 text-xs badge bg-orange-500/15 text-orange-400">Sublimado</span>}
             </p>
             <div className="space-y-2">
               {prenda.etapas.map((etapa, i) => {
@@ -217,31 +209,17 @@ export default function DetallePedido() {
 
       {/* Modal Aprobar */}
       <Modal open={modalAprobar} onClose={() => setModalAprobar(false)} title="Aprobar pedido" size="md">
-        <p className="text-gray-400 text-sm mb-4">Configurá las etapas de producción para cada prenda:</p>
-        <div className="space-y-4">
+        <p className="text-gray-400 text-sm mb-4">¿Confirmás la aprobación del pedido? Las etapas de producción ya fueron configuradas por el vendedor.</p>
+        <div className="space-y-2 mb-6">
           {pedido.prendas.map((p) => (
-            <div key={p.id} className="border border-gray-800 rounded-lg p-3">
-              <p className="font-medium text-white mb-2">{p.tipo} · Talle {p.talle}</p>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="accent-brand"
-                    checked={!!configPrendas[p.id]?.bordado}
-                    onChange={(e) => setConfigPrendas((c) => ({ ...c, [p.id]: { ...c[p.id], bordado: e.target.checked } }))}
-                  />
-                  <span className="text-sm text-gray-300">Bordado</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="accent-brand"
-                    checked={!!configPrendas[p.id]?.estampado}
-                    onChange={(e) => setConfigPrendas((c) => ({ ...c, [p.id]: { ...c[p.id], estampado: e.target.checked } }))}
-                  />
-                  <span className="text-sm text-gray-300">Estampado</span>
-                </label>
-              </div>
+            <div key={p.id} className="flex items-center gap-3 text-sm">
+              <span className="text-white">{p.tipo} · Talle {p.talle}</span>
+              {p.tieneBordado && <span className="badge bg-purple-500/15 text-purple-400">Bordado</span>}
+              {p.tieneEstampado && <span className="badge bg-orange-500/15 text-orange-400">Sublimado</span>}
             </div>
           ))}
         </div>
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3">
           <button onClick={() => aprobar.mutate()} disabled={aprobar.isPending} className="btn-primary">
             {aprobar.isPending ? 'Aprobando...' : 'Confirmar aprobación'}
           </button>

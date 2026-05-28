@@ -131,13 +131,17 @@ router.post('/', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => {
       localTomoPedido,
       creadorId: req.user.id,
       prendas: {
-        create: prendas.map((p) => ({
-          tipo: p.tipo,
-          talle: p.talle,
-          tieneBordado: false,
-          tieneEstampado: false,
-          etapas: { create: [] },
-        })),
+        create: prendas.map((p) => {
+          const tieneBordado = !!p.tieneBordado;
+          const tieneEstampado = !!p.tieneEstampado;
+          return {
+            tipo: p.tipo,
+            talle: p.talle,
+            tieneBordado,
+            tieneEstampado,
+            etapas: { create: buildEtapas(tieneBordado, tieneEstampado) },
+          };
+        }),
       },
     },
     include: INCLUDE_PEDIDO,
@@ -153,33 +157,10 @@ router.post('/', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => {
 // PUT /api/pedidos/:id/aprobar
 router.put('/:id/aprobar', requireRol('ADMINISTRADOR'), async (req, res) => {
   const id = Number(req.params.id);
-  const { configuracionPrendas } = req.body;
 
-  const pedidoActual = await prisma.pedido.findUnique({ where: { id }, include: { prendas: true } });
+  const pedidoActual = await prisma.pedido.findUnique({ where: { id } });
   if (!pedidoActual) return res.status(404).json({ error: 'Pedido no encontrado' });
   if (pedidoActual.estado !== 'PENDIENTE_APROBACION') return res.status(400).json({ error: 'Solo se pueden aprobar pedidos pendientes' });
-
-  // Actualizar cada prenda con bordado/estampado y crear sus etapas
-  for (const config of (configuracionPrendas || [])) {
-    const prenda = pedidoActual.prendas.find((p) => p.id === config.prendaId);
-    if (!prenda) continue;
-
-    const tieneBordado = !!config.tieneBordado;
-    const tieneEstampado = !!config.tieneEstampado;
-    const etapas = buildEtapas(tieneBordado, tieneEstampado);
-
-    await prisma.prenda.update({
-      where: { id: config.prendaId },
-      data: {
-        tieneBordado,
-        tieneEstampado,
-        etapas: {
-          deleteMany: {},
-          create: etapas,
-        },
-      },
-    });
-  }
 
   const pedido = await prisma.pedido.update({
     where: { id },

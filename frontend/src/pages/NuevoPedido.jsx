@@ -7,12 +7,21 @@ import Recibo from '../components/Recibo';
 
 const LOCALES = ['PELLEGRINI','SUR','NORTE','FISHERTON','SANTA_FE','SAN_NICOLAS','FABRICA'];
 const LOCAL_LABEL = { PELLEGRINI:'Pellegrini',SUR:'Sur',NORTE:'Norte',FISHERTON:'Fisherton',SANTA_FE:'Santa Fe',SAN_NICOLAS:'San Nicolás',FABRICA:'Fábrica' };
-const TALLES = ['XS','S','M','L','XL','XXL','3XL','4XL'];
+
+const PRENDAS_TIPOS = [
+  { key: 'remera', tipo: 'REMERA', label: 'Remera' },
+  { key: 'chomba', tipo: 'CHOMBA', label: 'Chomba' },
+  { key: 'campera', tipo: 'CAMPERA', label: 'Campera' },
+  { key: 'buzo', tipo: 'BUZO', label: 'Buzo' },
+];
 
 const INIT = {
   nombre: '', apellido: '', apodo: '', colegio: '', numeroContrato: '',
   costoTotal: '', sena: '', fechaEntregaComprometida: '', localTomoPedido: '',
-  tieneRemera: false, talleRemera: '', tieneCampera: false, talleCampera: '',
+  tieneRemera: false, talleRemera: '', bordadoRemera: false, sublimadoRemera: false,
+  tieneChomba: false, talleChomba: '', bordadoChomba: false, sublimadoChomba: false,
+  tieneCampera: false, talleCampera: '', bordadoCampera: false, sublimadoCampera: false,
+  tieneBuzo: false, talleBuzo: '', bordadoBuzo: false, sublimadoBuzo: false,
 };
 
 export default function NuevoPedido() {
@@ -34,12 +43,14 @@ export default function NuevoPedido() {
   function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    if (!form.tieneRemera && !form.tieneCampera) {
+    const prendas = [];
+    if (form.tieneRemera) prendas.push({ tipo: 'REMERA', talle: form.talleRemera, tieneBordado: form.bordadoRemera, tieneEstampado: form.sublimadoRemera });
+    if (form.tieneChomba) prendas.push({ tipo: 'CHOMBA', talle: form.talleChomba, tieneBordado: form.bordadoChomba, tieneEstampado: form.sublimadoChomba });
+    if (form.tieneCampera) prendas.push({ tipo: 'CAMPERA', talle: form.talleCampera, tieneBordado: form.bordadoCampera, tieneEstampado: form.sublimadoCampera });
+    if (form.tieneBuzo) prendas.push({ tipo: 'BUZO', talle: form.talleBuzo, tieneBordado: form.bordadoBuzo, tieneEstampado: form.sublimadoBuzo });
+    if (!prendas.length) {
       return setError('Debe seleccionar al menos una prenda');
     }
-    const prendas = [];
-    if (form.tieneRemera) prendas.push({ tipo: 'REMERA', talle: form.talleRemera });
-    if (form.tieneCampera) prendas.push({ tipo: 'CAMPERA', talle: form.talleCampera });
 
     mutation.mutate({
       nombre: form.nombre,
@@ -65,7 +76,6 @@ export default function NuevoPedido() {
         <div className="card border-brand/30 bg-brand/5 text-center py-6">
           <p className="text-2xl mb-2">✅</p>
           <p className="text-white font-semibold">Pedido creado exitosamente</p>
-          <p className="text-gray-400 text-sm mt-1">Se notificó a los administradores</p>
         </div>
         <div ref={reciboRef}>
           <Recibo pedido={pedidoCreado} />
@@ -117,32 +127,38 @@ export default function NuevoPedido() {
         <div className="card space-y-4">
           <h2 className="text-sm font-semibold text-brand uppercase tracking-wide">Prendas</h2>
           <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" checked={form.tieneRemera} onChange={(e) => set('tieneRemera', e.target.checked)} className="w-4 h-4 accent-brand" />
-              <span className="text-gray-300">Remera / Chomba</span>
-            </label>
-            {form.tieneRemera && (
-              <div className="ml-7">
-                <label className="label">Talle *</label>
-                <select className="input max-w-xs" value={form.talleRemera} onChange={(e) => set('talleRemera', e.target.value)} required>
-                  <option value="">Seleccionar...</option>
-                  {TALLES.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-            )}
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" checked={form.tieneCampera} onChange={(e) => set('tieneCampera', e.target.checked)} className="w-4 h-4 accent-brand" />
-              <span className="text-gray-300">Campera / Buzo</span>
-            </label>
-            {form.tieneCampera && (
-              <div className="ml-7">
-                <label className="label">Talle *</label>
-                <select className="input max-w-xs" value={form.talleCampera} onChange={(e) => set('talleCampera', e.target.value)} required>
-                  <option value="">Seleccionar...</option>
-                  {TALLES.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-            )}
+            {PRENDAS_TIPOS.map(({ key, label }) => {
+              const tieneKey = `tiene${key.charAt(0).toUpperCase() + key.slice(1)}`;
+              const talleKey = `talle${key.charAt(0).toUpperCase() + key.slice(1)}`;
+              const bordadoKey = `bordado${key.charAt(0).toUpperCase() + key.slice(1)}`;
+              const sublimadoKey = `sublimado${key.charAt(0).toUpperCase() + key.slice(1)}`;
+              return (
+                <div key={key}>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={form[tieneKey]} onChange={(e) => set(tieneKey, e.target.checked)} className="w-4 h-4 accent-brand" />
+                    <span className="text-gray-300">{label}</span>
+                  </label>
+                  {form[tieneKey] && (
+                    <div className="ml-7 mt-2 space-y-3">
+                      <div>
+                        <label className="label">Talle *</label>
+                        <input className="input max-w-xs" placeholder="Ej: M, XL, 42..." value={form[talleKey]} onChange={(e) => set(talleKey, e.target.value)} required />
+                      </div>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" className="w-4 h-4 accent-brand" checked={form[bordadoKey]} onChange={(e) => set(bordadoKey, e.target.checked)} />
+                          <span className="text-sm text-gray-300">Bordado</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" className="w-4 h-4 accent-brand" checked={form[sublimadoKey]} onChange={(e) => set(sublimadoKey, e.target.checked)} />
+                          <span className="text-sm text-gray-300">Sublimado</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 

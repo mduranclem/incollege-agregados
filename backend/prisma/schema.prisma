@@ -34,7 +34,9 @@ enum EstadoPedido {
 
 enum TipoPrenda {
   REMERA
+  CHOMBA
   CAMPERA
+  BUZO
 }
 
 enum NombreEtapa {

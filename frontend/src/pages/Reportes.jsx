@@ -32,9 +32,14 @@ export default function Reportes() {
   const senas = pedidos.reduce((s, p) => s + p.sena, 0);
   const saldo = total - senas;
 
-  function downloadExcel() {
-    const q = new URLSearchParams(params).toString();
-    window.open(`/api/reportes/excel?${q}`, '_blank');
+  async function downloadExcel() {
+    const response = await api.get('/reportes/excel', { params, responseType: 'blob' });
+    const url = URL.createObjectURL(new Blob([response.data]));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reportes-incollege.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
