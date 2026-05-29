@@ -129,6 +129,7 @@ router.post('/', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => {
       sena: Number(sena),
       fechaEntregaComprometida: new Date(fechaEntregaComprometida),
       localTomoPedido,
+      estado: 'EN_PRODUCCION',
       creadorId: req.user.id,
       prendas: {
         create: prendas.map((p) => {

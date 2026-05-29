@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import EstadoBadge from '../components/EstadoBadge';
+import { useAuth } from '../context/AuthContext';
 
 const LOCALES = ['PELLEGRINI','SUR','NORTE','FISHERTON','SANTA_FE','SAN_NICOLAS','FABRICA'];
 const LOCAL_LABEL = { PELLEGRINI:'Pellegrini',SUR:'Sur',NORTE:'Norte',FISHERTON:'Fisherton',SANTA_FE:'Santa Fe',SAN_NICOLAS:'San Nicolás',FABRICA:'Fábrica' };
@@ -12,6 +13,8 @@ const ESTADO_LABEL = { PENDIENTE_APROBACION:'Pendiente',RECHAZADO:'Rechazado',EN
 
 export default function Reportes() {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
+  const esGerente = usuario?.rol === 'GERENTE';
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
   const [local, setLocal] = useState('');
@@ -78,19 +81,23 @@ export default function Reportes() {
       </div>
 
       {/* Totales */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className={`grid gap-4 ${esGerente ? 'grid-cols-3' : 'grid-cols-1'}`}>
         <div className="card text-center">
           <p className="text-gray-400 text-sm">Total pedidos</p>
           <p className="text-2xl font-bold text-white">{pedidos.length}</p>
         </div>
-        <div className="card text-center">
-          <p className="text-gray-400 text-sm">Cobrado</p>
-          <p className="text-2xl font-bold text-brand">${senas.toLocaleString('es-AR')}</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-gray-400 text-sm">Saldo pendiente</p>
-          <p className="text-2xl font-bold text-yellow-400">${saldo.toLocaleString('es-AR')}</p>
-        </div>
+        {esGerente && (
+          <>
+            <div className="card text-center">
+              <p className="text-gray-400 text-sm">Cobrado</p>
+              <p className="text-2xl font-bold text-brand">${senas.toLocaleString('es-AR')}</p>
+            </div>
+            <div className="card text-center">
+              <p className="text-gray-400 text-sm">Saldo pendiente</p>
+              <p className="text-2xl font-bold text-yellow-400">${saldo.toLocaleString('es-AR')}</p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Tabla */}

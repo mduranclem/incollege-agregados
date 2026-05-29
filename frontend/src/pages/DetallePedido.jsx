@@ -162,7 +162,7 @@ export default function DetallePedido() {
       <div className="card space-y-3 no-print">
         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Acciones</h2>
         <div className="flex flex-wrap gap-3">
-          {pedido.estado === 'PENDIENTE_APROBACION' && esAdmin && (
+          {pedido.estado === 'PENDIENTE_APROBACION' && usuario?.rol === 'GERENTE' && (
             <>
               <button onClick={() => setModalAprobar(true)} className="btn-primary">✅ Aprobar pedido</button>
               <button onClick={() => setModalRechazar(true)} className="btn-danger">❌ Rechazar</button>

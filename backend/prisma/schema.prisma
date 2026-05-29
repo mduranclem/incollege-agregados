@@ -21,6 +21,7 @@ enum Rol {
   VENDEDOR
   PRODUCCION
   ADMINISTRADOR
+  GERENTE
 }
 
 enum EstadoPedido {

@@ -6,18 +6,18 @@ const { authenticate, requireRol } = require('../middleware/auth');
 const router = express.Router();
 const prisma = new PrismaClient();
 
-router.use(authenticate, requireRol('ADMINISTRADOR'));
+router.use(authenticate, requireRol('ADMINISTRADOR', 'GERENTE'));
 
 function buildWhere(query) {
   const { desde, hasta, local, estado } = query;
   const where = {};
   if (desde || hasta) {
-    where.fechaIngreso = {};
-    if (desde) where.fechaIngreso.gte = new Date(desde);
+    where.fechaEntregaComprometida = {};
+    if (desde) where.fechaEntregaComprometida.gte = new Date(desde);
     if (hasta) {
       const h = new Date(hasta);
       h.setHours(23, 59, 59, 999);
-      where.fechaIngreso.lte = h;
+      where.fechaEntregaComprometida.lte = h;
     }
   }
   if (local) where.localTomoPedido = local;
