@@ -22,6 +22,7 @@ const ROL_LABEL = {
   ADMINISTRADOR: 'Administrador',
   VENDEDOR: 'Vendedor',
   PRODUCCION: 'Producción',
+  GERENTE: 'Gerente',
 };
 
 export default function Sidebar({ open, onClose }) {
@@ -29,6 +30,7 @@ export default function Sidebar({ open, onClose }) {
   const navigate = useNavigate();
 
   const extraNav =
+    usuario?.rol === 'GERENTE' ? NAV_ADMIN :
     usuario?.rol === 'ADMINISTRADOR' ? NAV_ADMIN :
     usuario?.rol === 'VENDEDOR' ? NAV_VENDEDOR : [];
 
