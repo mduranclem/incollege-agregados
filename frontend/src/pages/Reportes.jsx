@@ -56,11 +56,11 @@ export default function Reportes() {
       <div className="card">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
-            <label className="label">Desde</label>
+            <label className="label">Entrega desde</label>
             <input type="date" className="input" value={desde} onChange={(e) => setDesde(e.target.value)} />
           </div>
           <div>
-            <label className="label">Hasta</label>
+            <label className="label">Entrega hasta</label>
             <input type="date" className="input" value={hasta} onChange={(e) => setHasta(e.target.value)} />
           </div>
           <div>
