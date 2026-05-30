@@ -243,4 +243,85 @@ router.put('/:id/entregado', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req
   res.json(pedido);
 });
 
+// PUT /api/pedidos/:id
+router.put('/:id', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => {
+  const id = Number(req.params.id);
+  const { nombre, apellido, apodo, colegio, numeroContrato, costoTotal, sena, fechaEntregaComprometida, localTomoPedido, prendas } = req.body;
+
+  if (!nombre || !apellido || !colegio || !numeroContrato || !costoTotal || !sena || !fechaEntregaComprometida || !localTomoPedido) {
+    return res.status(400).json({ error: 'Faltan campos requeridos' });
+  }
+
+  const pedidoActual = await prisma.pedido.findUnique({
+    where: { id },
+    include: { prendas: { include: { etapas: true } } },
+  });
+
+  if (!pedidoActual) return res.status(404).json({ error: 'Pedido no encontrado' });
+  if (pedidoActual.estado === 'ENTREGADO') return res.status(400).json({ error: 'No se puede editar un pedido entregado' });
+
+  const hayEtapasCompletadas = pedidoActual.prendas.some((p) => p.etapas.some((e) => e.completada));
+
+  const datosBasicos = {
+    nombre,
+    apellido,
+    apodo: apodo || null,
+    colegio,
+    numeroContrato,
+    costoTotal: Number(costoTotal),
+    sena: Number(sena),
+    fechaEntregaComprometida: new Date(fechaEntregaComprometida),
+    localTomoPedido,
+  };
+
+  let pedido;
+
+  if (!hayEtapasCompletadas && prendas?.length) {
+    await prisma.prenda.deleteMany({ where: { pedidoId: id } });
+    pedido = await prisma.pedido.update({
+      where: { id },
+      data: {
+        ...datosBasicos,
+        prendas: {
+          create: prendas.map((p) => {
+            const tieneBordado = !!p.tieneBordado;
+            const tieneEstampado = !!p.tieneEstampado;
+            return {
+              tipo: p.tipo,
+              talle: p.talle,
+              tieneBordado,
+              tieneEstampado,
+              etapas: { create: buildEtapas(tieneBordado, tieneEstampado) },
+            };
+          }),
+        },
+      },
+      include: INCLUDE_PEDIDO,
+    });
+  } else {
+    pedido = await prisma.pedido.update({
+      where: { id },
+      data: datosBasicos,
+      include: INCLUDE_PEDIDO,
+    });
+  }
+
+  await log({ usuarioId: req.user.id, accion: 'EDITAR_PEDIDO', entidad: 'Pedido', entidadId: id, pedidoId: id });
+  res.json(pedido);
+});
+
+// DELETE /api/pedidos/:id
+router.delete('/:id', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => {
+  const id = Number(req.params.id);
+
+  const pedido = await prisma.pedido.findUnique({ where: { id } });
+  if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
+  if (pedido.estado === 'ENTREGADO') return res.status(400).json({ error: 'No se puede eliminar un pedido entregado' });
+
+  await prisma.log.deleteMany({ where: { pedidoId: id } });
+  await prisma.pedido.delete({ where: { id } });
+
+  res.json({ ok: true });
+});
+
 module.exports = router;
