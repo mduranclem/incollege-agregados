@@ -8,6 +8,7 @@ import Terminados from './pages/Terminados';
 import Historial from './pages/Historial';
 import NuevoPedido from './pages/NuevoPedido';
 import DetallePedido from './pages/DetallePedido';
+import EditarPedido from './pages/EditarPedido';
 import Usuarios from './pages/Usuarios';
 import Reportes from './pages/Reportes';
 
@@ -31,6 +32,7 @@ function AppRoutes() {
         <Route path="historial" element={<Historial />} />
         <Route path="nuevo-pedido" element={<PrivateRoute roles={['VENDEDOR', 'ADMINISTRADOR', 'GERENTE']}><NuevoPedido /></PrivateRoute>} />
         <Route path="pedidos/:id" element={<DetallePedido />} />
+        <Route path="pedidos/:id/editar" element={<PrivateRoute roles={['VENDEDOR', 'ADMINISTRADOR']}><EditarPedido /></PrivateRoute>} />
         <Route path="usuarios" element={<PrivateRoute roles={['ADMINISTRADOR', 'GERENTE']}><Usuarios /></PrivateRoute>} />
         <Route path="reportes" element={<PrivateRoute roles={['ADMINISTRADOR', 'GERENTE']}><Reportes /></PrivateRoute>} />
       </Route>
