@@ -25,6 +25,7 @@ export default function DetallePedido() {
   const [motivoRechazo, setMotivoRechazo] = useState('');
   const [localAsignado, setLocalAsignado] = useState('');
   const [showRecibo, setShowRecibo] = useState(false);
+  const [modalEliminar, setModalEliminar] = useState(false);
 
   const { data: pedido, isLoading } = useQuery({
     queryKey: ['pedido', id],
@@ -63,6 +64,16 @@ export default function DetallePedido() {
     onSuccess: invalidate,
   });
 
+  const revertirEtapa = useMutation({
+    mutationFn: ({ prendaId, etapa }) => api.put(`/prendas/${prendaId}/etapas/${etapa}/revertir`).then((r) => r.data),
+    onSuccess: invalidate,
+  });
+
+  const eliminar = useMutation({
+    mutationFn: () => api.delete(`/pedidos/${id}`).then((r) => r.data),
+    onSuccess: () => navigate('/historial'),
+  });
+
   if (isLoading) return <div className="flex justify-center mt-20"><div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>;
   if (!pedido) return <div className="text-center mt-20 text-gray-400">Pedido no encontrado</div>;
 
@@ -86,6 +97,12 @@ export default function DetallePedido() {
         <div className="flex items-center gap-2 flex-wrap">
           <EstadoBadge estado={pedido.estado} />
           <button onClick={() => setShowRecibo(!showRecibo)} className="btn-secondary text-sm py-1.5">🖨️ Recibo</button>
+          {(usuario?.rol === 'VENDEDOR' || usuario?.rol === 'ADMINISTRADOR') && pedido.estado !== 'ENTREGADO' && (
+            <>
+              <button onClick={() => navigate(`/pedidos/${id}/editar`)} className="btn-secondary text-sm py-1.5">✏️ Editar</button>
+              <button onClick={() => setModalEliminar(true)} className="btn-danger text-sm py-1.5">🗑️ Eliminar</button>
+            </>
+          )}
         </div>
       </div>
 
@@ -125,6 +142,8 @@ export default function DetallePedido() {
             <div className="space-y-2">
               {prenda.etapas.map((etapa, i) => {
                 const esLaSiguiente = !etapa.completada && (i === 0 || prenda.etapas[i - 1]?.completada);
+                const puedeDeshacer = etapa.completada && pedido.estado === 'EN_PRODUCCION' &&
+                  (usuario?.rol === 'ADMINISTRADOR' || usuario?.rol === 'PRODUCCION');
                 return (
                   <div key={etapa.id} className="flex items-center gap-3">
                     <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0 ${etapa.completada ? 'bg-brand text-white' : 'bg-gray-800 text-gray-500 border border-gray-700'}`}>
@@ -148,6 +167,15 @@ export default function DetallePedido() {
                         className="text-xs btn-primary py-1 px-2"
                       >
                         Completar
+                      </button>
+                    )}
+                    {puedeDeshacer && (
+                      <button
+                        onClick={() => revertirEtapa.mutate({ prendaId: prenda.id, etapa: etapa.nombre })}
+                        disabled={revertirEtapa.isPending}
+                        className="text-xs btn-secondary py-1 px-2"
+                      >
+                        Deshacer
                       </button>
                     )}
                   </div>
@@ -258,6 +286,20 @@ export default function DetallePedido() {
           </button>
           <button onClick={() => setModalLocal(false)} className="btn-secondary">Cancelar</button>
         </div>
+      </Modal>
+
+      {/* Modal Eliminar */}
+      <Modal open={modalEliminar} onClose={() => setModalEliminar(false)} title="Eliminar pedido" size="md">
+        <p className="text-gray-400 text-sm mb-4">
+          ¿Confirmás que querés eliminar el pedido de <span className="text-white font-semibold">{pedido.nombre} {pedido.apellido}</span>? Esta acción no se puede deshacer.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={() => eliminar.mutate()} disabled={eliminar.isPending} className="btn-danger">
+            {eliminar.isPending ? 'Eliminando...' : 'Sí, eliminar'}
+          </button>
+          <button onClick={() => setModalEliminar(false)} className="btn-secondary">Cancelar</button>
+        </div>
+        {eliminar.isError && <p className="text-red-400 text-sm mt-2">{eliminar.error?.response?.data?.error}</p>}
       </Modal>
     </div>
   );
