@@ -96,4 +96,53 @@ router.put('/:id/etapas/:etapaNombre', requireRol('PRODUCCION', 'ADMINISTRADOR')
   res.json(prendaActualizada);
 });
 
+// PUT /api/prendas/:id/etapas/:etapaNombre/revertir
+router.put('/:id/etapas/:etapaNombre/revertir', requireRol('PRODUCCION', 'ADMINISTRADOR'), async (req, res) => {
+  const prendaId = Number(req.params.id);
+  const etapaNombre = req.params.etapaNombre;
+
+  const prenda = await prisma.prenda.findUnique({
+    where: { id: prendaId },
+    include: {
+      etapas: { orderBy: { orden: 'asc' } },
+      pedido: true,
+    },
+  });
+
+  if (!prenda) return res.status(404).json({ error: 'Prenda no encontrada' });
+  if (prenda.pedido.estado !== 'EN_PRODUCCION') return res.status(400).json({ error: 'El pedido no está en producción' });
+
+  const etapa = prenda.etapas.find((e) => e.nombre === etapaNombre);
+  if (!etapa) return res.status(404).json({ error: 'Etapa no encontrada' });
+  if (!etapa.completada) return res.status(400).json({ error: 'Esta etapa no está completada' });
+
+  const etapasARevertir = prenda.etapas.filter((e) => e.orden >= etapa.orden);
+
+  await prisma.etapaProduccion.updateMany({
+    where: { id: { in: etapasARevertir.map((e) => e.id) } },
+    data: { completada: false, fechaInicio: null, fechaFin: null, usuarioId: null },
+  });
+
+  await log({
+    usuarioId: req.user.id,
+    accion: 'REVERTIR_ETAPA',
+    entidad: 'EtapaProduccion',
+    entidadId: etapa.id,
+    pedidoId: prenda.pedido.id,
+    detalle: `Prenda ${prenda.tipo} - Etapa ${etapaNombre} (y posteriores)`,
+  });
+
+  const prendaActualizada = await prisma.prenda.findUnique({
+    where: { id: prendaId },
+    include: {
+      etapas: {
+        orderBy: { orden: 'asc' },
+        include: { usuario: { select: { id: true, nombre: true } } },
+      },
+    },
+  });
+
+  res.json(prendaActualizada);
+});
+
 module.exports = router;
