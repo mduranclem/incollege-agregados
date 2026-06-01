@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import EstadoBadge from '../components/EstadoBadge';
 import Modal from '../components/Modal';
 import Recibo from '../components/Recibo';
+import CuentaCorriente from '../components/CuentaCorriente';
 
 const LOCAL_LABEL = { PELLEGRINI:'Pellegrini',SUR:'Sur',NORTE:'Norte',FISHERTON:'Fisherton',SANTA_FE:'Santa Fe',SAN_NICOLAS:'San Nicolás',FABRICA:'Fábrica' };
 const LOCALES = ['PELLEGRINI','SUR','NORTE','FISHERTON','SANTA_FE','SAN_NICOLAS','FABRICA'];
@@ -137,7 +138,7 @@ export default function DetallePedido() {
             <p className="font-semibold text-white mb-3">
               {['REMERA','CHOMBA'].includes(prenda.tipo) ? '👕' : '🧥'} {prenda.tipo} · Talle {prenda.talle}
               {prenda.tieneBordado && <span className="ml-2 text-xs badge bg-purple-500/15 text-purple-400">Bordado</span>}
-              {prenda.tieneEstampado && <span className="ml-2 text-xs badge bg-orange-500/15 text-orange-400">Sublimado</span>}
+              {prenda.tieneEstampado && <span className="ml-2 text-xs badge bg-orange-500/15 text-orange-400">DTF/ESTAMPADO</span>}
             </p>
             <div className="space-y-2">
               {prenda.etapas.map((etapa, i) => {
@@ -185,6 +186,9 @@ export default function DetallePedido() {
           </div>
         ))}
       </div>
+
+      {/* Cuenta corriente */}
+      <CuentaCorriente pedido={pedido} />
 
       {/* Acciones */}
       <div className="card space-y-3 no-print">
@@ -243,7 +247,7 @@ export default function DetallePedido() {
             <div key={p.id} className="flex items-center gap-3 text-sm">
               <span className="text-white">{p.tipo} · Talle {p.talle}</span>
               {p.tieneBordado && <span className="badge bg-purple-500/15 text-purple-400">Bordado</span>}
-              {p.tieneEstampado && <span className="badge bg-orange-500/15 text-orange-400">Sublimado</span>}
+              {p.tieneEstampado && <span className="badge bg-orange-500/15 text-orange-400">DTF/ESTAMPADO</span>}
             </div>
           ))}
         </div>
