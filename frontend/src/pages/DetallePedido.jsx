@@ -78,7 +78,7 @@ export default function DetallePedido() {
   if (!pedido) return <div className="text-center mt-20 text-gray-400">Pedido no encontrado</div>;
 
   const saldo = pedido.costoTotal - pedido.sena;
-  const esAdmin = usuario?.rol === 'ADMINISTRADOR';
+  const esAdmin = usuario?.rol === 'ADMINISTRADOR' || usuario?.rol === 'GERENTE';
   const esVendedor = usuario?.rol === 'VENDEDOR' || esAdmin;
   const esProduccion = usuario?.rol === 'PRODUCCION' || esAdmin;
 
@@ -97,7 +97,7 @@ export default function DetallePedido() {
         <div className="flex items-center gap-2 flex-wrap">
           <EstadoBadge estado={pedido.estado} />
           <button onClick={() => setShowRecibo(!showRecibo)} className="btn-secondary text-sm py-1.5">🖨️ Recibo</button>
-          {(usuario?.rol === 'VENDEDOR' || usuario?.rol === 'ADMINISTRADOR') && pedido.estado !== 'ENTREGADO' && (
+          {(usuario?.rol === 'VENDEDOR' || usuario?.rol === 'ADMINISTRADOR' || usuario?.rol === 'GERENTE') && pedido.estado !== 'ENTREGADO' && (
             <>
               <button onClick={() => navigate(`/pedidos/${id}/editar`)} className="btn-secondary text-sm py-1.5">✏️ Editar</button>
               <button onClick={() => setModalEliminar(true)} className="btn-danger text-sm py-1.5">🗑️ Eliminar</button>
@@ -143,7 +143,7 @@ export default function DetallePedido() {
               {prenda.etapas.map((etapa, i) => {
                 const esLaSiguiente = !etapa.completada && (i === 0 || prenda.etapas[i - 1]?.completada);
                 const puedeDeshacer = etapa.completada && pedido.estado === 'EN_PRODUCCION' &&
-                  (usuario?.rol === 'ADMINISTRADOR' || usuario?.rol === 'PRODUCCION');
+                  (usuario?.rol === 'ADMINISTRADOR' || usuario?.rol === 'PRODUCCION' || usuario?.rol === 'GERENTE');
                 return (
                   <div key={etapa.id} className="flex items-center gap-3">
                     <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0 ${etapa.completada ? 'bg-brand text-white' : 'bg-gray-800 text-gray-500 border border-gray-700'}`}>
@@ -190,7 +190,7 @@ export default function DetallePedido() {
       <div className="card space-y-3 no-print">
         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Acciones</h2>
         <div className="flex flex-wrap gap-3">
-          {pedido.estado === 'PENDIENTE_APROBACION' && usuario?.rol === 'GERENTE' && (
+          {pedido.estado === 'PENDIENTE_APROBACION' && (usuario?.rol === 'GERENTE' || usuario?.rol === 'ADMINISTRADOR') && (
             <>
               <button onClick={() => setModalAprobar(true)} className="btn-primary">✅ Aprobar pedido</button>
               <button onClick={() => setModalRechazar(true)} className="btn-danger">❌ Rechazar</button>

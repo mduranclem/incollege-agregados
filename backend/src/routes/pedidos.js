@@ -111,7 +111,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/pedidos
-router.post('/', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => {
+router.post('/', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const { nombre, apellido, apodo, colegio, numeroContrato, costoTotal, sena, fechaEntregaComprometida, localTomoPedido, prendas } = req.body;
 
   if (!nombre || !apellido || !colegio || !numeroContrato || !costoTotal || !sena || !fechaEntregaComprometida || !localTomoPedido || !prendas?.length) {
@@ -156,7 +156,7 @@ router.post('/', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => {
 });
 
 // PUT /api/pedidos/:id/aprobar
-router.put('/:id/aprobar', requireRol('ADMINISTRADOR'), async (req, res) => {
+router.put('/:id/aprobar', requireRol('ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const id = Number(req.params.id);
 
   const pedidoActual = await prisma.pedido.findUnique({ where: { id } });
@@ -174,7 +174,7 @@ router.put('/:id/aprobar', requireRol('ADMINISTRADOR'), async (req, res) => {
 });
 
 // PUT /api/pedidos/:id/rechazar
-router.put('/:id/rechazar', requireRol('ADMINISTRADOR'), async (req, res) => {
+router.put('/:id/rechazar', requireRol('ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const id = Number(req.params.id);
   const { motivo } = req.body;
   if (!motivo) return res.status(400).json({ error: 'Se requiere un motivo de rechazo' });
@@ -194,7 +194,7 @@ router.put('/:id/rechazar', requireRol('ADMINISTRADOR'), async (req, res) => {
 });
 
 // PUT /api/pedidos/:id/asignar-local
-router.put('/:id/asignar-local', requireRol('ADMINISTRADOR'), async (req, res) => {
+router.put('/:id/asignar-local', requireRol('ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const id = Number(req.params.id);
   const { local } = req.body;
   if (!local) return res.status(400).json({ error: 'Local requerido' });
@@ -210,7 +210,7 @@ router.put('/:id/asignar-local', requireRol('ADMINISTRADOR'), async (req, res) =
 });
 
 // PUT /api/pedidos/:id/recibido
-router.put('/:id/recibido', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => {
+router.put('/:id/recibido', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const id = Number(req.params.id);
   const pedidoActual = await prisma.pedido.findUnique({ where: { id } });
   if (!pedidoActual) return res.status(404).json({ error: 'Pedido no encontrado' });
@@ -227,7 +227,7 @@ router.put('/:id/recibido', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req,
 });
 
 // PUT /api/pedidos/:id/entregado
-router.put('/:id/entregado', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => {
+router.put('/:id/entregado', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const id = Number(req.params.id);
   const pedidoActual = await prisma.pedido.findUnique({ where: { id } });
   if (!pedidoActual) return res.status(404).json({ error: 'Pedido no encontrado' });
@@ -244,7 +244,7 @@ router.put('/:id/entregado', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req
 });
 
 // PUT /api/pedidos/:id
-router.put('/:id', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => {
+router.put('/:id', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const id = Number(req.params.id);
   const { nombre, apellido, apodo, colegio, numeroContrato, costoTotal, sena, fechaEntregaComprometida, localTomoPedido, prendas } = req.body;
 
@@ -311,7 +311,7 @@ router.put('/:id', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => 
 });
 
 // DELETE /api/pedidos/:id
-router.delete('/:id', requireRol('VENDEDOR', 'ADMINISTRADOR'), async (req, res) => {
+router.delete('/:id', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const id = Number(req.params.id);
 
   const pedido = await prisma.pedido.findUnique({ where: { id } });

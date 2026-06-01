@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 router.use(authenticate);
 
 // PUT /api/prendas/:id/etapas/:etapaNombre
-router.put('/:id/etapas/:etapaNombre', requireRol('PRODUCCION', 'ADMINISTRADOR'), async (req, res) => {
+router.put('/:id/etapas/:etapaNombre', requireRol('PRODUCCION', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const prendaId = Number(req.params.id);
   const etapaNombre = req.params.etapaNombre;
 
@@ -97,7 +97,7 @@ router.put('/:id/etapas/:etapaNombre', requireRol('PRODUCCION', 'ADMINISTRADOR')
 });
 
 // PUT /api/prendas/:id/etapas/:etapaNombre/revertir
-router.put('/:id/etapas/:etapaNombre/revertir', requireRol('PRODUCCION', 'ADMINISTRADOR'), async (req, res) => {
+router.put('/:id/etapas/:etapaNombre/revertir', requireRol('PRODUCCION', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const prendaId = Number(req.params.id);
   const etapaNombre = req.params.etapaNombre;
 

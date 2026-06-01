@@ -7,7 +7,7 @@ const { log } = require('../services/logger');
 const router = express.Router();
 const prisma = new PrismaClient();
 
-router.use(authenticate, requireRol('ADMINISTRADOR'));
+router.use(authenticate, requireRol('ADMINISTRADOR', 'GERENTE'));
 
 // GET /api/usuarios
 router.get('/', async (req, res) => {
