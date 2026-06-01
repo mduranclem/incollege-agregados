@@ -148,6 +148,15 @@ router.post('/', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (req,
     include: INCLUDE_PEDIDO,
   });
 
+  await prisma.pago.create({
+    data: {
+      pedidoId: pedido.id,
+      monto: Number(sena),
+      notas: 'Seña inicial',
+      creadoPorId: req.user.id,
+    },
+  });
+
   await log({ usuarioId: req.user.id, accion: 'CREAR_PEDIDO', entidad: 'Pedido', entidadId: pedido.id, pedidoId: pedido.id, detalle: `${nombre} ${apellido} - ${colegio}` });
 
   notificarNuevoPedido(pedido).catch(console.error);
@@ -308,6 +317,62 @@ router.put('/:id', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (re
 
   await log({ usuarioId: req.user.id, accion: 'EDITAR_PEDIDO', entidad: 'Pedido', entidadId: id, pedidoId: id });
   res.json(pedido);
+});
+
+// GET /api/pedidos/:id/pagos
+router.get('/:id/pagos', async (req, res) => {
+  const id = Number(req.params.id);
+  const pedido = await prisma.pedido.findUnique({ where: { id }, select: { costoTotal: true } });
+  if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
+
+  const pagos = await prisma.pago.findMany({
+    where: { pedidoId: id },
+    orderBy: { fecha: 'asc' },
+    include: { creadoPor: { select: { id: true, nombre: true } } },
+  });
+
+  const totalPagado = pagos.reduce((acc, p) => acc + p.monto, 0);
+  const deudaRestante = pedido.costoTotal - totalPagado;
+
+  res.json({ pagos, costoTotal: pedido.costoTotal, totalPagado, deudaRestante, saldado: deudaRestante <= 0 });
+});
+
+// POST /api/pedidos/:id/pagos
+router.post('/:id/pagos', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
+  const id = Number(req.params.id);
+  const { monto, fecha, notas } = req.body;
+
+  if (!monto || Number(monto) <= 0) return res.status(400).json({ error: 'Monto inválido' });
+
+  const pedido = await prisma.pedido.findUnique({ where: { id } });
+  if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
+
+  const pago = await prisma.pago.create({
+    data: {
+      pedidoId: id,
+      monto: Number(monto),
+      fecha: fecha ? new Date(fecha) : new Date(),
+      notas: notas || null,
+      creadoPorId: req.user.id,
+    },
+    include: { creadoPor: { select: { id: true, nombre: true } } },
+  });
+
+  await log({ usuarioId: req.user.id, accion: 'REGISTRAR_PAGO', entidad: 'Pago', entidadId: pago.id, pedidoId: id, detalle: `$${monto}` });
+  res.status(201).json(pago);
+});
+
+// DELETE /api/pedidos/:id/pagos/:pagoId
+router.delete('/:id/pagos/:pagoId', requireRol('ADMINISTRADOR', 'GERENTE'), async (req, res) => {
+  const pagoId = Number(req.params.pagoId);
+  const pedidoId = Number(req.params.id);
+
+  const pago = await prisma.pago.findUnique({ where: { id: pagoId } });
+  if (!pago) return res.status(404).json({ error: 'Pago no encontrado' });
+
+  await prisma.pago.delete({ where: { id: pagoId } });
+  await log({ usuarioId: req.user.id, accion: 'ELIMINAR_PAGO', entidad: 'Pago', entidadId: pagoId, pedidoId, detalle: `$${pago.monto}` });
+  res.json({ ok: true });
 });
 
 // DELETE /api/pedidos/:id
