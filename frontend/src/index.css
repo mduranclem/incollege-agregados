@@ -39,5 +39,12 @@
 @media print {
   body { background: white !important; color: black !important; }
   .no-print { display: none !important; }
-  .print-only { display: block !important; }
+  body * { visibility: hidden; }
+  .print-only, .print-only * { visibility: visible; }
+  .print-only {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
 }
