@@ -51,6 +51,10 @@ export default function NuevoPedido() {
     if (!prendas.length) {
       return setError('Debe seleccionar al menos una prenda');
     }
+    const prendaSinTecnica = prendas.find((p) => !p.tieneBordado && !p.tieneEstampado);
+    if (prendaSinTecnica) {
+      return setError(`La prenda ${prendaSinTecnica.tipo} debe tener Bordado o DTF/ESTAMPADO seleccionado`);
+    }
 
     mutation.mutate({
       nombre: form.nombre,
@@ -151,7 +155,7 @@ export default function NuevoPedido() {
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input type="checkbox" className="w-4 h-4 accent-brand" checked={form[sublimadoKey]} onChange={(e) => set(sublimadoKey, e.target.checked)} />
-                          <span className="text-sm text-gray-300">Sublimado</span>
+                          <span className="text-sm text-gray-300">DTF/ESTAMPADO</span>
                         </label>
                       </div>
                     </div>
