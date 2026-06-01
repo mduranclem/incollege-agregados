@@ -65,6 +65,7 @@ model Usuario {
   etapasCompletadas EtapaProduccion[]
   logs              Log[]
   refreshTokens     RefreshToken[]
+  pagosRegistrados  Pago[]
 }
 
 model RefreshToken {
@@ -97,6 +98,7 @@ model Pedido {
 
   prendas Prenda[]
   logs    Log[]
+  pagos   Pago[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -139,4 +141,16 @@ model Log {
   pedidoId  Int?
   pedido    Pedido?  @relation(fields: [pedidoId], references: [id])
   createdAt DateTime @default(now())
+}
+
+model Pago {
+  id          Int      @id @default(autoincrement())
+  pedidoId    Int
+  pedido      Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  monto       Float
+  fecha       DateTime @default(now())
+  notas       String?
+  creadoPorId Int
+  creadoPor   Usuario  @relation(fields: [creadoPorId], references: [id])
+  createdAt   DateTime @default(now())
 }
