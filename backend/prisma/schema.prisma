@@ -58,6 +58,7 @@ model Usuario {
   rol            Rol
   localPrincipal Local?
   activo         Boolean  @default(true)
+  eliminado      Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
