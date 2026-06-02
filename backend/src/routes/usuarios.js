@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, requireRol } = require('../middleware/auth');
 const { log } = require('../services/logger');
@@ -7,11 +8,12 @@ const { log } = require('../services/logger');
 const router = express.Router();
 const prisma = new PrismaClient();
 
-router.use(authenticate, requireRol('ADMINISTRADOR', 'GERENTE'));
+router.use(authenticate, requireRol('GERENTE'));
 
 // GET /api/usuarios
 router.get('/', async (req, res) => {
   const usuarios = await prisma.usuario.findMany({
+    where: { eliminado: false },
     select: { id: true, nombre: true, email: true, rol: true, localPrincipal: true, activo: true, createdAt: true },
     orderBy: { nombre: 'asc' },
   });
@@ -62,7 +64,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/usuarios/:id (desactivar)
+// DELETE /api/usuarios/:id (desactivar — soft disable)
 router.delete('/:id', async (req, res) => {
   const id = Number(req.params.id);
   if (id === req.user.id) return res.status(400).json({ error: 'No podés desactivarte a vos mismo' });
@@ -74,6 +76,37 @@ router.delete('/:id', async (req, res) => {
   });
   await log({ usuarioId: req.user.id, accion: 'DESACTIVAR_USUARIO', entidad: 'Usuario', entidadId: id, detalle: usuario.nombre });
   res.json({ ok: true });
+});
+
+// DELETE /api/usuarios/:id/eliminar (tombstone — eliminación permanente)
+router.delete('/:id/eliminar', async (req, res) => {
+  const id = Number(req.params.id);
+  if (id === req.user.id) return res.status(400).json({ error: 'No podés eliminarte a vos mismo' });
+
+  try {
+    const usuario = await prisma.usuario.findUnique({ where: { id }, select: { nombre: true, eliminado: true } });
+    if (!usuario || usuario.eliminado) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    const nombreOriginal = usuario.nombre;
+
+    await prisma.$transaction([
+      prisma.refreshToken.deleteMany({ where: { usuarioId: id } }),
+      prisma.usuario.update({
+        where: { id },
+        data: {
+          email: `eliminado_${id}@deleted.local`,
+          password: bcrypt.hashSync(crypto.randomUUID(), 10),
+          activo: false,
+          eliminado: true,
+        },
+      }),
+    ]);
+
+    await log({ usuarioId: req.user.id, accion: 'ELIMINAR_USUARIO', entidad: 'Usuario', entidadId: id, detalle: nombreOriginal });
+    res.json({ ok: true });
+  } catch {
+    res.status(404).json({ error: 'Usuario no encontrado' });
+  }
 });
 
 module.exports = router;
