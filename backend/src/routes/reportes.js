@@ -1,10 +1,9 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const ExcelJS = require('exceljs');
 const { authenticate, requireRol } = require('../middleware/auth');
+const prisma = require('../lib/prisma');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 router.use(authenticate, requireRol('ADMINISTRADOR', 'GERENTE'));
 

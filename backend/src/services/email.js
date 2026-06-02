@@ -1,7 +1,5 @@
 const nodemailer = require('nodemailer');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 function createTransport() {
   return nodemailer.createTransport({
