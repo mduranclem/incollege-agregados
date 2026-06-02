@@ -107,8 +107,9 @@ router.delete('/:id/eliminar', async (req, res) => {
 
     await log({ usuarioId: req.user.id, accion: 'ELIMINAR_USUARIO', entidad: 'Usuario', entidadId: id, detalle: nombreOriginal });
     res.json({ ok: true });
-  } catch {
-    res.status(404).json({ error: 'Usuario no encontrado' });
+  } catch (e) {
+    console.error('Error eliminando usuario:', e);
+    res.status(500).json({ error: 'Error interno al eliminar el usuario' });
   }
 });
 

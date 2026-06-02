@@ -43,6 +43,7 @@ export default function Usuarios() {
   const eliminar = useMutation({
     mutationFn: (id) => api.delete(`/usuarios/${id}/eliminar`).then((r) => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['usuarios'] }); setConfirmarEliminar(null); },
+    onError: (err) => setError(err.response?.data?.error || 'Error al eliminar el usuario'),
   });
 
   function abrirCrear() {
