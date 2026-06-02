@@ -18,6 +18,11 @@ const NAV_ADMIN = [
   { to: '/reportes', label: 'Reportes', icon: '📈' },
 ];
 
+const NAV_ADMINISTRADOR = [
+  { to: '/nuevo-pedido', label: 'Nuevo Pedido', icon: '➕' },
+  { to: '/reportes', label: 'Reportes', icon: '📈' },
+];
+
 const ROL_LABEL = {
   ADMINISTRADOR: 'Administrador',
   VENDEDOR: 'Vendedor',
@@ -31,7 +36,7 @@ export default function Sidebar({ open, onClose }) {
 
   const extraNav =
     usuario?.rol === 'GERENTE' ? NAV_ADMIN :
-    usuario?.rol === 'ADMINISTRADOR' ? NAV_ADMIN :
+    usuario?.rol === 'ADMINISTRADOR' ? NAV_ADMINISTRADOR :
     usuario?.rol === 'VENDEDOR' ? NAV_VENDEDOR : [];
 
   const allNav = [...NAV, ...extraNav];
