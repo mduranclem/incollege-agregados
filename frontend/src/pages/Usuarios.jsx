@@ -2,20 +2,23 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 import Modal from '../components/Modal';
+import { useAuth } from '../context/AuthContext';
 
 const LOCALES = ['PELLEGRINI','SUR','NORTE','FISHERTON','SANTA_FE','SAN_NICOLAS','FABRICA'];
 const LOCAL_LABEL = { PELLEGRINI:'Pellegrini',SUR:'Sur',NORTE:'Norte',FISHERTON:'Fisherton',SANTA_FE:'Santa Fe',SAN_NICOLAS:'San Nicolás',FABRICA:'Fábrica' };
-const ROL_LABEL = { ADMINISTRADOR:'Administrador', VENDEDOR:'Vendedor', PRODUCCION:'Producción' };
-const ROL_COLOR = { ADMINISTRADOR:'bg-brand/15 text-brand', VENDEDOR:'bg-blue-500/15 text-blue-400', PRODUCCION:'bg-purple-500/15 text-purple-400' };
+const ROL_LABEL = { ADMINISTRADOR:'Administrador', VENDEDOR:'Vendedor', PRODUCCION:'Producción', GERENTE:'Gerente' };
+const ROL_COLOR = { ADMINISTRADOR:'bg-brand/15 text-brand', VENDEDOR:'bg-blue-500/15 text-blue-400', PRODUCCION:'bg-purple-500/15 text-purple-400', GERENTE:'bg-yellow-500/15 text-yellow-400' };
 
 const INIT_FORM = { nombre:'', email:'', password:'', rol:'VENDEDOR', localPrincipal:'' };
 
 export default function Usuarios() {
   const qc = useQueryClient();
+  const { usuario: usuarioActual } = useAuth();
   const [modal, setModal] = useState(false);
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(INIT_FORM);
   const [error, setError] = useState('');
+  const [confirmarEliminar, setConfirmarEliminar] = useState(null);
 
   const { data: usuarios = [], isLoading } = useQuery({
     queryKey: ['usuarios'],
@@ -35,6 +38,11 @@ export default function Usuarios() {
   const desactivar = useMutation({
     mutationFn: (id) => api.delete(`/usuarios/${id}`).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['usuarios'] }),
+  });
+
+  const eliminar = useMutation({
+    mutationFn: (id) => api.delete(`/usuarios/${id}/eliminar`).then((r) => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['usuarios'] }); setConfirmarEliminar(null); },
   });
 
   function abrirCrear() {
@@ -100,8 +108,11 @@ export default function Usuarios() {
                   <td className="py-3">
                     <div className="flex gap-2">
                       <button onClick={() => abrirEditar(u)} className="text-xs text-gray-400 hover:text-white">Editar</button>
-                      {u.activo && (
-                        <button onClick={() => desactivar.mutate(u.id)} className="text-xs text-red-400 hover:text-red-300">Desactivar</button>
+                      {u.activo && u.id !== usuarioActual?.id && (
+                        <button onClick={() => desactivar.mutate(u.id)} className="text-xs text-orange-400 hover:text-orange-300">Desactivar</button>
+                      )}
+                      {u.id !== usuarioActual?.id && (
+                        <button onClick={() => setConfirmarEliminar(u)} className="text-xs text-red-400 hover:text-red-300">Eliminar</button>
                       )}
                     </div>
                   </td>
@@ -112,6 +123,7 @@ export default function Usuarios() {
         </div>
       )}
 
+      {/* Modal crear/editar */}
       <Modal open={modal} onClose={cerrarModal} title={editando ? 'Editar usuario' : 'Nuevo usuario'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -132,6 +144,7 @@ export default function Usuarios() {
               <option value="VENDEDOR">Vendedor</option>
               <option value="PRODUCCION">Producción</option>
               <option value="ADMINISTRADOR">Administrador</option>
+              <option value="GERENTE">Gerente</option>
             </select>
           </div>
           <div>
@@ -149,6 +162,28 @@ export default function Usuarios() {
             <button type="button" className="btn-secondary" onClick={cerrarModal}>Cancelar</button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal confirmar eliminación */}
+      <Modal open={!!confirmarEliminar} onClose={() => setConfirmarEliminar(null)} title="Eliminar usuario">
+        <div className="space-y-4">
+          <p className="text-gray-300">
+            ¿Estás seguro que querés eliminar a <span className="text-white font-semibold">{confirmarEliminar?.nombre}</span>?
+          </p>
+          <p className="text-gray-500 text-sm">
+            Esta acción es permanente. El historial del usuario se conservará con su nombre.
+          </p>
+          <div className="flex gap-3">
+            <button
+              className="btn-primary bg-red-600 hover:bg-red-700"
+              onClick={() => eliminar.mutate(confirmarEliminar.id)}
+              disabled={eliminar.isPending}
+            >
+              {eliminar.isPending ? 'Eliminando...' : 'Sí, eliminar'}
+            </button>
+            <button className="btn-secondary" onClick={() => setConfirmarEliminar(null)}>Cancelar</button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

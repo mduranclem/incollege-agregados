@@ -33,7 +33,7 @@ function AppRoutes() {
         <Route path="nuevo-pedido" element={<PrivateRoute roles={['VENDEDOR', 'ADMINISTRADOR', 'GERENTE']}><NuevoPedido /></PrivateRoute>} />
         <Route path="pedidos/:id" element={<DetallePedido />} />
         <Route path="pedidos/:id/editar" element={<PrivateRoute roles={['VENDEDOR', 'ADMINISTRADOR', 'GERENTE']}><EditarPedido /></PrivateRoute>} />
-        <Route path="usuarios" element={<PrivateRoute roles={['ADMINISTRADOR', 'GERENTE']}><Usuarios /></PrivateRoute>} />
+        <Route path="usuarios" element={<PrivateRoute roles={['GERENTE']}><Usuarios /></PrivateRoute>} />
         <Route path="reportes" element={<PrivateRoute roles={['ADMINISTRADOR', 'GERENTE']}><Reportes /></PrivateRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
