@@ -43,6 +43,9 @@ router.put('/:id', async (req, res) => {
   const id = Number(req.params.id);
   const { nombre, email, password, rol, localPrincipal, activo } = req.body;
 
+  const target = await prisma.usuario.findUnique({ where: { id }, select: { eliminado: true } });
+  if (!target || target.eliminado) return res.status(404).json({ error: 'Usuario no encontrado' });
+
   const data = {};
   if (nombre !== undefined) data.nombre = nombre;
   if (email !== undefined) data.email = email;
@@ -94,7 +97,7 @@ router.delete('/:id/eliminar', async (req, res) => {
       prisma.usuario.update({
         where: { id },
         data: {
-          email: `eliminado_${id}@deleted.local`,
+          email: `eliminado_${id}@deleted.example`,
           password: bcrypt.hashSync(crypto.randomUUID(), 10),
           activo: false,
           eliminado: true,
