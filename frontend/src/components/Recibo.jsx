@@ -40,6 +40,12 @@ export default function Recibo({ pedido }) {
             <td className="py-1.5 text-gray-500">N° Contrato</td>
             <td className="py-1.5 font-medium">{pedido.numeroContrato}</td>
           </tr>
+          {pedido.telefono && (
+            <tr className="border-b border-gray-100">
+              <td className="py-1.5 text-gray-500">Teléfono</td>
+              <td className="py-1.5 font-medium">{pedido.telefono}</td>
+            </tr>
+          )}
           <tr className="border-b border-gray-100">
             <td className="py-1.5 text-gray-500">Prendas</td>
             <td className="py-1.5 font-medium">
@@ -69,6 +75,13 @@ export default function Recibo({ pedido }) {
           <span className="font-bold text-gray-900">${saldo.toLocaleString('es-AR')}</span>
         </div>
       </div>
+
+      {pedido.observaciones && (
+        <div className="mb-4 text-sm">
+          <p className="text-gray-500 mb-1">Observaciones</p>
+          <p className="text-gray-800 whitespace-pre-wrap">{pedido.observaciones}</p>
+        </div>
+      )}
 
       <p className="text-xs text-gray-400 text-center border-t border-gray-100 pt-4">
         Este comprobante no tiene validez fiscal · Conservarlo hasta retirar el pedido

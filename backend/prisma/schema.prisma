@@ -93,6 +93,8 @@ model Pedido {
   localEntregaAsignado     Local?
   estado                   EstadoPedido @default(PENDIENTE_APROBACION)
   motivoRechazo            String?
+  telefono                 String?
+  observaciones            String?      @db.Text
 
   creadorId Int
   creador   Usuario @relation("PedidoCreador", fields: [creadorId], references: [id])
@@ -127,6 +129,7 @@ model EtapaProduccion {
   fechaInicio DateTime?
   fechaFin    DateTime?
   completada  Boolean     @default(false)
+  taller      String?
   usuarioId   Int?
   usuario     Usuario?    @relation(fields: [usuarioId], references: [id])
 }

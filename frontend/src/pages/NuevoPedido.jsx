@@ -16,7 +16,7 @@ const PRENDAS_TIPOS = [
 ];
 
 const INIT = {
-  nombre: '', apellido: '', apodo: '', colegio: '', numeroContrato: '',
+  nombre: '', apellido: '', apodo: '', colegio: '', numeroContrato: '', telefono: '',
   costoTotal: '', sena: '', fechaEntregaComprometida: '', localTomoPedido: '',
   tieneRemera: false, talleRemera: '', bordadoRemera: false, sublimadoRemera: false,
   tieneChomba: false, talleChomba: '', bordadoChomba: false, sublimadoChomba: false,
@@ -62,6 +62,7 @@ export default function NuevoPedido() {
       apodo: form.apodo || undefined,
       colegio: form.colegio,
       numeroContrato: form.numeroContrato,
+      telefono: form.telefono || undefined,
       costoTotal: Number(form.costoTotal),
       sena: Number(form.sena),
       fechaEntregaComprometida: form.fechaEntregaComprometida,
@@ -124,6 +125,10 @@ export default function NuevoPedido() {
               <label className="label">N° de contrato *</label>
               <input className="input" value={form.numeroContrato} onChange={(e) => set('numeroContrato', e.target.value)} required />
             </div>
+          </div>
+          <div>
+            <label className="label">Teléfono (opcional)</label>
+            <input className="input" value={form.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="Ej: 341 1234567" />
           </div>
         </div>
 
@@ -198,8 +203,9 @@ export default function NuevoPedido() {
               </select>
             </div>
             <div>
-              <label className="label">Fecha de entrega comprometida *</label>
+              <label className="label">Fecha de entrega (aproximada) *</label>
               <input className="input" type="date" value={form.fechaEntregaComprometida} onChange={(e) => set('fechaEntregaComprometida', e.target.value)} required />
+              <p className="text-xs text-gray-500 mt-1">La fecha es orientativa y puede variar</p>
             </div>
           </div>
         </div>

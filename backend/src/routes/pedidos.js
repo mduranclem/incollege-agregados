@@ -111,7 +111,7 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/pedidos
 router.post('/', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
-  const { nombre, apellido, apodo, colegio, numeroContrato, costoTotal, sena, fechaEntregaComprometida, localTomoPedido, prendas } = req.body;
+  const { nombre, apellido, apodo, colegio, numeroContrato, telefono, costoTotal, sena, fechaEntregaComprometida, localTomoPedido, prendas } = req.body;
 
   if (!nombre || !apellido || !colegio || !numeroContrato || !costoTotal || !sena || !fechaEntregaComprometida || !localTomoPedido || !prendas?.length) {
     return res.status(400).json({ error: 'Faltan campos requeridos' });
@@ -124,6 +124,7 @@ router.post('/', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (req,
       apodo: apodo || null,
       colegio,
       numeroContrato,
+      telefono: telefono || null,
       costoTotal: Number(costoTotal),
       sena: Number(sena),
       fechaEntregaComprometida: new Date(fechaEntregaComprometida),
@@ -249,10 +250,28 @@ router.put('/:id/entregado', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'),
   res.json(pedido);
 });
 
+// PUT /api/pedidos/:id/observaciones
+router.put('/:id/observaciones', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
+  const id = Number(req.params.id);
+  const { observaciones } = req.body;
+
+  const pedidoActual = await prisma.pedido.findUnique({ where: { id } });
+  if (!pedidoActual) return res.status(404).json({ error: 'Pedido no encontrado' });
+
+  const pedido = await prisma.pedido.update({
+    where: { id },
+    data: { observaciones: observaciones || null },
+    include: INCLUDE_PEDIDO,
+  });
+
+  await log({ usuarioId: req.user.id, accion: 'EDITAR_OBSERVACIONES', entidad: 'Pedido', entidadId: id, pedidoId: id });
+  res.json(pedido);
+});
+
 // PUT /api/pedidos/:id
 router.put('/:id', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const id = Number(req.params.id);
-  const { nombre, apellido, apodo, colegio, numeroContrato, costoTotal, sena, fechaEntregaComprometida, localTomoPedido, prendas } = req.body;
+  const { nombre, apellido, apodo, colegio, numeroContrato, telefono, costoTotal, sena, fechaEntregaComprometida, localTomoPedido, prendas } = req.body;
 
   if (!nombre || !apellido || !colegio || !numeroContrato || !costoTotal || !sena || !fechaEntregaComprometida || !localTomoPedido) {
     return res.status(400).json({ error: 'Faltan campos requeridos' });
@@ -274,6 +293,7 @@ router.put('/:id', requireRol('VENDEDOR', 'ADMINISTRADOR', 'GERENTE'), async (re
     apodo: apodo || null,
     colegio,
     numeroContrato,
+    telefono: telefono !== undefined ? (telefono || null) : undefined,
     costoTotal: Number(costoTotal),
     sena: Number(sena),
     fechaEntregaComprometida: new Date(fechaEntregaComprometida),

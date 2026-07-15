@@ -27,6 +27,9 @@ export default function DetallePedido() {
   const [localAsignado, setLocalAsignado] = useState('');
   const [showRecibo, setShowRecibo] = useState(false);
   const [modalEliminar, setModalEliminar] = useState(false);
+  const [editandoObs, setEditandoObs] = useState(false);
+  const [observaciones, setObservaciones] = useState('');
+  const [tallerInputs, setTallerInputs] = useState({});
 
   const { data: pedido, isLoading } = useQuery({
     queryKey: ['pedido', id],
@@ -61,8 +64,20 @@ export default function DetallePedido() {
   });
 
   const avanzarEtapa = useMutation({
-    mutationFn: ({ prendaId, etapa }) => api.put(`/prendas/${prendaId}/etapas/${etapa}`).then((r) => r.data),
-    onSuccess: invalidate,
+    mutationFn: ({ prendaId, etapa, taller }) => api.put(`/prendas/${prendaId}/etapas/${etapa}`, { taller }).then((r) => r.data),
+    onSuccess: (_data, { prendaId, etapa }) => {
+      setTallerInputs((prev) => {
+        const next = { ...prev };
+        delete next[`${prendaId}-${etapa}`];
+        return next;
+      });
+      invalidate();
+    },
+  });
+
+  const guardarObservaciones = useMutation({
+    mutationFn: () => api.put(`/pedidos/${id}/observaciones`, { observaciones }).then((r) => r.data),
+    onSuccess: () => { invalidate(); setEditandoObs(false); },
   });
 
   const revertirEtapa = useMutation({
@@ -118,7 +133,10 @@ export default function DetallePedido() {
       <div className="card grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
         <div><p className="text-gray-400">Local</p><p className="text-white font-medium">{LOCAL_LABEL[pedido.localTomoPedido]}</p></div>
         <div><p className="text-gray-400">Ingreso</p><p className="text-white font-medium">{format(new Date(pedido.fechaIngreso), 'dd/MM/yyyy')}</p></div>
-        <div><p className="text-gray-400">Entrega comprometida</p><p className="text-white font-medium">{format(new Date(pedido.fechaEntregaComprometida), 'dd/MM/yyyy')}</p></div>
+        <div><p className="text-gray-400">Entrega (aproximada)</p><p className="text-white font-medium">{format(new Date(pedido.fechaEntregaComprometida), 'dd/MM/yyyy')}</p></div>
+        {pedido.telefono && (
+          <div><p className="text-gray-400">Teléfono</p><p className="text-white font-medium">{pedido.telefono}</p></div>
+        )}
         <div><p className="text-gray-400">Costo total</p><p className="text-white font-medium">${pedido.costoTotal.toLocaleString('es-AR')}</p></div>
         <div><p className="text-gray-400">Seña</p><p className="text-white font-medium">${pedido.sena.toLocaleString('es-AR')}</p></div>
         <div><p className="text-gray-400">Saldo</p><p className={`font-medium ${saldo > 0 ? 'text-yellow-400' : 'text-green-400'}`}>${saldo.toLocaleString('es-AR')}</p></div>
@@ -145,12 +163,14 @@ export default function DetallePedido() {
                 const esLaSiguiente = !etapa.completada && (i === 0 || prenda.etapas[i - 1]?.completada);
                 const puedeDeshacer = etapa.completada && pedido.estado === 'EN_PRODUCCION' &&
                   (usuario?.rol === 'ADMINISTRADOR' || usuario?.rol === 'PRODUCCION' || usuario?.rol === 'GERENTE');
+                const tallerKey = `${prenda.id}-${etapa.nombre}`;
+                const puedeCompletar = esLaSiguiente && esProduccion && pedido.estado === 'EN_PRODUCCION';
                 return (
-                  <div key={etapa.id} className="flex items-center gap-3">
+                  <div key={etapa.id} className="flex items-center gap-3 flex-wrap">
                     <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0 ${etapa.completada ? 'bg-brand text-white' : 'bg-gray-800 text-gray-500 border border-gray-700'}`}>
                       {etapa.completada ? '✓' : ''}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-[8rem]">
                       <span className={`text-sm ${etapa.completada ? 'text-gray-300' : 'text-gray-500'}`}>
                         {ETAPA_LABEL[etapa.nombre]}
                       </span>
@@ -158,12 +178,21 @@ export default function DetallePedido() {
                         <span className="text-xs text-gray-500 ml-2">
                           {format(new Date(etapa.fechaFin), 'dd/MM/yyyy HH:mm')}
                           {etapa.usuario && ` · ${etapa.usuario.nombre}`}
+                          {etapa.taller && ` · Taller: ${etapa.taller}`}
                         </span>
                       )}
                     </div>
-                    {esLaSiguiente && esProduccion && pedido.estado === 'EN_PRODUCCION' && (
+                    {puedeCompletar && (
+                      <input
+                        className="input py-1 text-xs w-32"
+                        placeholder="Taller"
+                        value={tallerInputs[tallerKey] || ''}
+                        onChange={(e) => setTallerInputs((prev) => ({ ...prev, [tallerKey]: e.target.value }))}
+                      />
+                    )}
+                    {puedeCompletar && (
                       <button
-                        onClick={() => avanzarEtapa.mutate({ prendaId: prenda.id, etapa: etapa.nombre })}
+                        onClick={() => avanzarEtapa.mutate({ prendaId: prenda.id, etapa: etapa.nombre, taller: tallerInputs[tallerKey] || undefined })}
                         disabled={avanzarEtapa.isPending}
                         className="text-xs btn-primary py-1 px-2"
                       >
@@ -189,6 +218,45 @@ export default function DetallePedido() {
 
       {/* Cuenta corriente */}
       <CuentaCorriente pedido={pedido} />
+
+      {/* Observaciones */}
+      <div className="card space-y-3 no-print">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-brand uppercase tracking-wide">Observaciones</h2>
+          {esVendedor && !editandoObs && (
+            <button
+              onClick={() => { setObservaciones(pedido.observaciones || ''); setEditandoObs(true); }}
+              className="text-xs btn-secondary py-1 px-2"
+            >
+              ✏️ Editar
+            </button>
+          )}
+        </div>
+        {editandoObs ? (
+          <div className="space-y-2">
+            <textarea
+              className="input h-24 resize-none"
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
+              placeholder="Notas u observaciones sobre el pedido..."
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => guardarObservaciones.mutate()}
+                disabled={guardarObservaciones.isPending}
+                className="text-xs btn-primary py-1 px-2"
+              >
+                {guardarObservaciones.isPending ? 'Guardando...' : 'Guardar'}
+              </button>
+              <button onClick={() => setEditandoObs(false)} className="text-xs btn-secondary py-1 px-2">Cancelar</button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-300 whitespace-pre-wrap">
+            {pedido.observaciones || <span className="text-gray-500">Sin observaciones</span>}
+          </p>
+        )}
+      </div>
 
       {/* Acciones */}
       <div className="card space-y-3 no-print">

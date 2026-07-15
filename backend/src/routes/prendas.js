@@ -34,6 +34,8 @@ router.put('/:id/etapas/:etapaNombre', requireRol('PRODUCCION', 'ADMINISTRADOR',
     return res.status(400).json({ error: 'Debes completar la etapa anterior primero' });
   }
 
+  const { taller } = req.body;
+
   const now = new Date();
   await prisma.etapaProduccion.update({
     where: { id: etapa.id },
@@ -42,6 +44,7 @@ router.put('/:id/etapas/:etapaNombre', requireRol('PRODUCCION', 'ADMINISTRADOR',
       fechaInicio: etapa.fechaInicio || now,
       fechaFin: now,
       usuarioId: req.user.id,
+      taller: taller || null,
     },
   });
 
@@ -51,7 +54,7 @@ router.put('/:id/etapas/:etapaNombre', requireRol('PRODUCCION', 'ADMINISTRADOR',
     entidad: 'EtapaProduccion',
     entidadId: etapa.id,
     pedidoId: prenda.pedido.id,
-    detalle: `Prenda ${prenda.tipo} - Etapa ${etapaNombre}`,
+    detalle: `Prenda ${prenda.tipo} - Etapa ${etapaNombre}${taller ? ` - Taller: ${taller}` : ''}`,
   });
 
   // Si la etapa es ENTREGA_A_LOCAL, verificar si todas las prendas del pedido la completaron
@@ -119,7 +122,7 @@ router.put('/:id/etapas/:etapaNombre/revertir', requireRol('PRODUCCION', 'ADMINI
 
   await prisma.etapaProduccion.updateMany({
     where: { id: { in: etapasARevertir.map((e) => e.id) } },
-    data: { completada: false, fechaInicio: null, fechaFin: null, usuarioId: null },
+    data: { completada: false, fechaInicio: null, fechaFin: null, usuarioId: null, taller: null },
   });
 
   await log({
