@@ -95,6 +95,18 @@ export default function DetallePedido() {
     setEventoDescripcion('');
   }
 
+  const cancelarEvento = useMutation({
+    mutationFn: ({ prendaId, etapa, tipo }) =>
+      api.put(`/prendas/${prendaId}/etapas/${etapa}/${tipo}`).then((r) => r.data),
+    onSuccess: invalidate,
+  });
+
+  function handleCancelarEvento(prendaId, etapaNombre, tipo) {
+    if (window.confirm('¿Estás seguro?')) {
+      cancelarEvento.mutate({ prendaId, etapa: etapaNombre, tipo });
+    }
+  }
+
   const revertirEtapa = useMutation({
     mutationFn: ({ prendaId, etapa }) => api.put(`/prendas/${prendaId}/etapas/${etapa}/revertir`).then((r) => r.data),
     onSuccess: invalidate,
@@ -230,9 +242,18 @@ export default function DetallePedido() {
                     {(etapa.fechaSalida || etapa.fechaLlegada || puedeGestionarEnvio) && (
                       <div className="ml-8 flex items-center gap-3 flex-wrap text-xs">
                         {etapa.fechaSalida ? (
-                          <span className="text-gray-500">
+                          <span className="text-gray-500 flex items-center gap-2">
                             🚚 Se fue: {format(new Date(etapa.fechaSalida), 'dd/MM/yyyy HH:mm')}
                             {etapa.descripcionSalida && ` · ${etapa.descripcionSalida}`}
+                            {!etapa.fechaLlegada && puedeGestionarEnvio && (
+                              <button
+                                onClick={() => handleCancelarEvento(prenda.id, etapa.nombre, 'cancelar-salida')}
+                                disabled={cancelarEvento.isPending}
+                                className="text-red-400 hover:text-red-300"
+                              >
+                                ✕ Cancelar
+                              </button>
+                            )}
                           </span>
                         ) : puedeGestionarEnvio ? (
                           <button
@@ -244,9 +265,18 @@ export default function DetallePedido() {
                         ) : null}
 
                         {etapa.fechaLlegada ? (
-                          <span className="text-gray-500">
+                          <span className="text-gray-500 flex items-center gap-2">
                             ✓ Llegó: {format(new Date(etapa.fechaLlegada), 'dd/MM/yyyy HH:mm')}
                             {etapa.descripcionLlegada && ` · ${etapa.descripcionLlegada}`}
+                            {puedeGestionarEnvio && (
+                              <button
+                                onClick={() => handleCancelarEvento(prenda.id, etapa.nombre, 'cancelar-llegada')}
+                                disabled={cancelarEvento.isPending}
+                                className="text-red-400 hover:text-red-300"
+                              >
+                                ✕ Cancelar
+                              </button>
+                            )}
                           </span>
                         ) : etapa.fechaSalida && puedeGestionarEnvio ? (
                           <button
