@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 import Modal from '../components/Modal';
+import PasswordInput from '../components/PasswordInput';
 import { useAuth } from '../context/AuthContext';
 
 const LOCALES = ['PELLEGRINI','SUR','NORTE','FISHERTON','SANTA_FE','SAN_NICOLAS','FABRICA'];
@@ -137,7 +138,7 @@ export default function Usuarios() {
           </div>
           <div>
             <label className="label">{editando ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}</label>
-            <input className="input" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} required={!editando} minLength={6} />
+            <PasswordInput value={form.password} onChange={(e) => set('password', e.target.value)} required={!editando} minLength={6} />
           </div>
           <div>
             <label className="label">Rol *</label>

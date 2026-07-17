@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import api from '../api/client';
 import Modal from './Modal';
+import PasswordInput from './PasswordInput';
 
 const INIT = { passwordActual: '', passwordNueva: '', confirmarPassword: '' };
 
@@ -51,9 +52,7 @@ export default function CambiarPasswordModal({ open, onClose }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="label">Contraseña actual *</label>
-            <input
-              className="input"
-              type="password"
+            <PasswordInput
               value={form.passwordActual}
               onChange={(e) => set('passwordActual', e.target.value)}
               required
@@ -61,9 +60,7 @@ export default function CambiarPasswordModal({ open, onClose }) {
           </div>
           <div>
             <label className="label">Nueva contraseña *</label>
-            <input
-              className="input"
-              type="password"
+            <PasswordInput
               value={form.passwordNueva}
               onChange={(e) => set('passwordNueva', e.target.value)}
               required
@@ -71,9 +68,7 @@ export default function CambiarPasswordModal({ open, onClose }) {
           </div>
           <div>
             <label className="label">Confirmar nueva contraseña *</label>
-            <input
-              className="input"
-              type="password"
+            <PasswordInput
               value={form.confirmarPassword}
               onChange={(e) => set('confirmarPassword', e.target.value)}
               required
