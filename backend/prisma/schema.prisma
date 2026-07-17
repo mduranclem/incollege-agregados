@@ -132,6 +132,11 @@ model EtapaProduccion {
   taller      String?
   usuarioId   Int?
   usuario     Usuario?    @relation(fields: [usuarioId], references: [id])
+
+  fechaSalida        DateTime?
+  descripcionSalida  String?
+  fechaLlegada       DateTime?
+  descripcionLlegada String?
 }
 
 model Log {

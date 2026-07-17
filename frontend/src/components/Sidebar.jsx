@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import CambiarPasswordModal from './CambiarPasswordModal';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: '📊', exact: true },
@@ -15,13 +17,13 @@ const NAV_VENDEDOR = [
 const NAV_ADMIN = [
   { to: '/nuevo-pedido', label: 'Nuevo Pedido', icon: '➕' },
   { to: '/usuarios', label: 'Usuarios', icon: '👥' },
-  { to: '/reportes', label: 'Reportes', icon: '📈' },
 ];
 
 const NAV_ADMINISTRADOR = [
   { to: '/nuevo-pedido', label: 'Nuevo Pedido', icon: '➕' },
-  { to: '/reportes', label: 'Reportes', icon: '📈' },
 ];
+
+const REPORTES_EMAIL = 'valeriaclementi3@gmail.com';
 
 const ROL_LABEL = {
   ADMINISTRADOR: 'Administrador',
@@ -33,6 +35,7 @@ const ROL_LABEL = {
 export default function Sidebar({ open, onClose }) {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
+  const [modalPassword, setModalPassword] = useState(false);
 
   const extraNav =
     usuario?.rol === 'GERENTE' ? NAV_ADMIN :
@@ -40,6 +43,9 @@ export default function Sidebar({ open, onClose }) {
     usuario?.rol === 'VENDEDOR' ? NAV_VENDEDOR : [];
 
   const allNav = [...NAV, ...extraNav];
+  if (usuario?.email === REPORTES_EMAIL) {
+    allNav.push({ to: '/reportes', label: 'Reportes', icon: '📈' });
+  }
 
   function handleLogout() {
     logout();
@@ -106,12 +112,20 @@ export default function Sidebar({ open, onClose }) {
           </div>
         </div>
         <button
+          onClick={() => setModalPassword(true)}
+          className="w-full text-left text-sm text-gray-400 hover:text-white transition-colors px-2 py-1 rounded"
+        >
+          🔒 Cambiar contraseña
+        </button>
+        <button
           onClick={handleLogout}
           className="w-full text-left text-sm text-gray-400 hover:text-red-400 transition-colors px-2 py-1 rounded"
         >
           Cerrar sesión
         </button>
       </div>
+
+      <CambiarPasswordModal open={modalPassword} onClose={() => setModalPassword(false)} />
     </aside>
   );
 }

@@ -80,6 +80,28 @@ router.post('/logout', authenticate, async (req, res) => {
   res.json({ ok: true });
 });
 
+// PUT /api/auth/cambiar-password
+router.put('/cambiar-password', authenticate, async (req, res) => {
+  const { passwordActual, passwordNueva } = req.body;
+  if (!passwordActual || !passwordNueva) {
+    return res.status(400).json({ error: 'Faltan campos requeridos' });
+  }
+  if (passwordNueva.length < 6) {
+    return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+  }
+
+  const usuario = await prisma.usuario.findUnique({ where: { id: req.user.id } });
+  if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+  const ok = await bcrypt.compare(passwordActual, usuario.password);
+  if (!ok) return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+
+  const hashed = bcrypt.hashSync(passwordNueva, 10);
+  await prisma.usuario.update({ where: { id: usuario.id }, data: { password: hashed } });
+
+  res.json({ ok: true });
+});
+
 // GET /api/auth/me
 router.get('/me', authenticate, async (req, res) => {
   const usuario = await prisma.usuario.findUnique({

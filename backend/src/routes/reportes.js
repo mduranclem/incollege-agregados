@@ -1,11 +1,18 @@
 const express = require('express');
 const ExcelJS = require('exceljs');
-const { authenticate, requireRol } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
 
 const router = express.Router();
 
-router.use(authenticate, requireRol('ADMINISTRADOR', 'GERENTE'));
+const ADMIN_PRINCIPAL_EMAIL = 'valeriaclementi3@gmail.com';
+
+router.use(authenticate, (req, res, next) => {
+  if (req.user.email !== ADMIN_PRINCIPAL_EMAIL) {
+    return res.status(403).json({ error: 'Sin permisos para esta acción' });
+  }
+  next();
+});
 
 function buildWhere(query) {
   const { desde, hasta, local, estado } = query;

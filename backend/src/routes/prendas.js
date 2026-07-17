@@ -98,6 +98,101 @@ router.put('/:id/etapas/:etapaNombre', requireRol('PRODUCCION', 'ADMINISTRADOR',
   res.json(prendaActualizada);
 });
 
+// PUT /api/prendas/:id/etapas/:etapaNombre/se-va
+router.put('/:id/etapas/:etapaNombre/se-va', requireRol('PRODUCCION', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
+  const prendaId = Number(req.params.id);
+  const etapaNombre = req.params.etapaNombre;
+  const { fecha, descripcion } = req.body;
+
+  const prenda = await prisma.prenda.findUnique({
+    where: { id: prendaId },
+    include: { etapas: true, pedido: true },
+  });
+
+  if (!prenda) return res.status(404).json({ error: 'Prenda no encontrada' });
+  if (prenda.pedido.estado !== 'EN_PRODUCCION') return res.status(400).json({ error: 'El pedido no está en producción' });
+
+  const etapa = prenda.etapas.find((e) => e.nombre === etapaNombre);
+  if (!etapa) return res.status(404).json({ error: 'Etapa no encontrada para esta prenda' });
+
+  await prisma.etapaProduccion.update({
+    where: { id: etapa.id },
+    data: {
+      fechaSalida: fecha ? new Date(fecha) : new Date(),
+      descripcionSalida: descripcion || null,
+    },
+  });
+
+  await log({
+    usuarioId: req.user.id,
+    accion: 'ETAPA_SE_VA',
+    entidad: 'EtapaProduccion',
+    entidadId: etapa.id,
+    pedidoId: prenda.pedido.id,
+    detalle: `Prenda ${prenda.tipo} - Etapa ${etapaNombre}${descripcion ? ` - ${descripcion}` : ''}`,
+  });
+
+  const prendaActualizada = await prisma.prenda.findUnique({
+    where: { id: prendaId },
+    include: {
+      etapas: {
+        orderBy: { orden: 'asc' },
+        include: { usuario: { select: { id: true, nombre: true } } },
+      },
+    },
+  });
+
+  res.json(prendaActualizada);
+});
+
+// PUT /api/prendas/:id/etapas/:etapaNombre/llego
+router.put('/:id/etapas/:etapaNombre/llego', requireRol('PRODUCCION', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
+  const prendaId = Number(req.params.id);
+  const etapaNombre = req.params.etapaNombre;
+  const { fecha, descripcion } = req.body;
+
+  const prenda = await prisma.prenda.findUnique({
+    where: { id: prendaId },
+    include: { etapas: true, pedido: true },
+  });
+
+  if (!prenda) return res.status(404).json({ error: 'Prenda no encontrada' });
+  if (prenda.pedido.estado !== 'EN_PRODUCCION') return res.status(400).json({ error: 'El pedido no está en producción' });
+
+  const etapa = prenda.etapas.find((e) => e.nombre === etapaNombre);
+  if (!etapa) return res.status(404).json({ error: 'Etapa no encontrada para esta prenda' });
+  if (!etapa.fechaSalida) return res.status(400).json({ error: 'Primero debe registrarse la salida de la prenda' });
+
+  await prisma.etapaProduccion.update({
+    where: { id: etapa.id },
+    data: {
+      fechaLlegada: fecha ? new Date(fecha) : new Date(),
+      descripcionLlegada: descripcion || null,
+    },
+  });
+
+  await log({
+    usuarioId: req.user.id,
+    accion: 'ETAPA_LLEGO',
+    entidad: 'EtapaProduccion',
+    entidadId: etapa.id,
+    pedidoId: prenda.pedido.id,
+    detalle: `Prenda ${prenda.tipo} - Etapa ${etapaNombre}${descripcion ? ` - ${descripcion}` : ''}`,
+  });
+
+  const prendaActualizada = await prisma.prenda.findUnique({
+    where: { id: prendaId },
+    include: {
+      etapas: {
+        orderBy: { orden: 'asc' },
+        include: { usuario: { select: { id: true, nombre: true } } },
+      },
+    },
+  });
+
+  res.json(prendaActualizada);
+});
+
 // PUT /api/prendas/:id/etapas/:etapaNombre/revertir
 router.put('/:id/etapas/:etapaNombre/revertir', requireRol('PRODUCCION', 'ADMINISTRADOR', 'GERENTE'), async (req, res) => {
   const prendaId = Number(req.params.id);
@@ -122,7 +217,10 @@ router.put('/:id/etapas/:etapaNombre/revertir', requireRol('PRODUCCION', 'ADMINI
 
   await prisma.etapaProduccion.updateMany({
     where: { id: { in: etapasARevertir.map((e) => e.id) } },
-    data: { completada: false, fechaInicio: null, fechaFin: null, usuarioId: null, taller: null },
+    data: {
+      completada: false, fechaInicio: null, fechaFin: null, usuarioId: null, taller: null,
+      fechaSalida: null, descripcionSalida: null, fechaLlegada: null, descripcionLlegada: null,
+    },
   });
 
   await log({

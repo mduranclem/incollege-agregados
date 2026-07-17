@@ -30,6 +30,9 @@ export default function DetallePedido() {
   const [editandoObs, setEditandoObs] = useState(false);
   const [observaciones, setObservaciones] = useState('');
   const [tallerInputs, setTallerInputs] = useState({});
+  const [eventoModal, setEventoModal] = useState(null);
+  const [eventoFecha, setEventoFecha] = useState('');
+  const [eventoDescripcion, setEventoDescripcion] = useState('');
 
   const { data: pedido, isLoading } = useQuery({
     queryKey: ['pedido', id],
@@ -79,6 +82,18 @@ export default function DetallePedido() {
     mutationFn: () => api.put(`/pedidos/${id}/observaciones`, { observaciones }).then((r) => r.data),
     onSuccess: () => { invalidate(); setEditandoObs(false); },
   });
+
+  const registrarEvento = useMutation({
+    mutationFn: ({ prendaId, etapa, tipo, fecha, descripcion }) =>
+      api.put(`/prendas/${prendaId}/etapas/${etapa}/${tipo}`, { fecha, descripcion }).then((r) => r.data),
+    onSuccess: () => { invalidate(); setEventoModal(null); setEventoFecha(''); setEventoDescripcion(''); },
+  });
+
+  function abrirEventoModal(prendaId, etapaNombre, tipo) {
+    setEventoModal({ prendaId, etapaNombre, tipo });
+    setEventoFecha(new Date().toISOString().split('T')[0]);
+    setEventoDescripcion('');
+  }
 
   const revertirEtapa = useMutation({
     mutationFn: ({ prendaId, etapa }) => api.put(`/prendas/${prendaId}/etapas/${etapa}/revertir`).then((r) => r.data),
@@ -165,48 +180,83 @@ export default function DetallePedido() {
                   (usuario?.rol === 'ADMINISTRADOR' || usuario?.rol === 'PRODUCCION' || usuario?.rol === 'GERENTE');
                 const tallerKey = `${prenda.id}-${etapa.nombre}`;
                 const puedeCompletar = esLaSiguiente && esProduccion && pedido.estado === 'EN_PRODUCCION';
+                const puedeGestionarEnvio = esLaSiguiente && esProduccion && pedido.estado === 'EN_PRODUCCION';
                 return (
-                  <div key={etapa.id} className="flex items-center gap-3 flex-wrap">
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0 ${etapa.completada ? 'bg-brand text-white' : 'bg-gray-800 text-gray-500 border border-gray-700'}`}>
-                      {etapa.completada ? '✓' : ''}
-                    </div>
-                    <div className="flex-1 min-w-[8rem]">
-                      <span className={`text-sm ${etapa.completada ? 'text-gray-300' : 'text-gray-500'}`}>
-                        {ETAPA_LABEL[etapa.nombre]}
-                      </span>
-                      {etapa.completada && etapa.fechaFin && (
-                        <span className="text-xs text-gray-500 ml-2">
-                          {format(new Date(etapa.fechaFin), 'dd/MM/yyyy HH:mm')}
-                          {etapa.usuario && ` · ${etapa.usuario.nombre}`}
-                          {etapa.taller && ` · Taller: ${etapa.taller}`}
+                  <div key={etapa.id} className="space-y-1.5">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0 ${etapa.completada ? 'bg-brand text-white' : 'bg-gray-800 text-gray-500 border border-gray-700'}`}>
+                        {etapa.completada ? '✓' : ''}
+                      </div>
+                      <div className="flex-1 min-w-[8rem]">
+                        <span className={`text-sm ${etapa.completada ? 'text-gray-300' : 'text-gray-500'}`}>
+                          {ETAPA_LABEL[etapa.nombre]}
                         </span>
+                        {etapa.completada && etapa.fechaFin && (
+                          <span className="text-xs text-gray-500 ml-2">
+                            {format(new Date(etapa.fechaFin), 'dd/MM/yyyy HH:mm')}
+                            {etapa.usuario && ` · ${etapa.usuario.nombre}`}
+                            {etapa.taller && ` · Taller: ${etapa.taller}`}
+                          </span>
+                        )}
+                      </div>
+                      {puedeCompletar && (
+                        <input
+                          className="input py-1 text-xs w-32"
+                          placeholder="Taller"
+                          value={tallerInputs[tallerKey] || ''}
+                          onChange={(e) => setTallerInputs((prev) => ({ ...prev, [tallerKey]: e.target.value }))}
+                        />
+                      )}
+                      {puedeCompletar && (
+                        <button
+                          onClick={() => avanzarEtapa.mutate({ prendaId: prenda.id, etapa: etapa.nombre, taller: tallerInputs[tallerKey] || undefined })}
+                          disabled={avanzarEtapa.isPending}
+                          className="text-xs btn-primary py-1 px-2"
+                        >
+                          Completar
+                        </button>
+                      )}
+                      {puedeDeshacer && (
+                        <button
+                          onClick={() => revertirEtapa.mutate({ prendaId: prenda.id, etapa: etapa.nombre })}
+                          disabled={revertirEtapa.isPending}
+                          className="text-xs btn-secondary py-1 px-2"
+                        >
+                          Deshacer
+                        </button>
                       )}
                     </div>
-                    {puedeCompletar && (
-                      <input
-                        className="input py-1 text-xs w-32"
-                        placeholder="Taller"
-                        value={tallerInputs[tallerKey] || ''}
-                        onChange={(e) => setTallerInputs((prev) => ({ ...prev, [tallerKey]: e.target.value }))}
-                      />
-                    )}
-                    {puedeCompletar && (
-                      <button
-                        onClick={() => avanzarEtapa.mutate({ prendaId: prenda.id, etapa: etapa.nombre, taller: tallerInputs[tallerKey] || undefined })}
-                        disabled={avanzarEtapa.isPending}
-                        className="text-xs btn-primary py-1 px-2"
-                      >
-                        Completar
-                      </button>
-                    )}
-                    {puedeDeshacer && (
-                      <button
-                        onClick={() => revertirEtapa.mutate({ prendaId: prenda.id, etapa: etapa.nombre })}
-                        disabled={revertirEtapa.isPending}
-                        className="text-xs btn-secondary py-1 px-2"
-                      >
-                        Deshacer
-                      </button>
+
+                    {(etapa.fechaSalida || etapa.fechaLlegada || puedeGestionarEnvio) && (
+                      <div className="ml-8 flex items-center gap-3 flex-wrap text-xs">
+                        {etapa.fechaSalida ? (
+                          <span className="text-gray-500">
+                            🚚 Se fue: {format(new Date(etapa.fechaSalida), 'dd/MM/yyyy HH:mm')}
+                            {etapa.descripcionSalida && ` · ${etapa.descripcionSalida}`}
+                          </span>
+                        ) : puedeGestionarEnvio ? (
+                          <button
+                            onClick={() => abrirEventoModal(prenda.id, etapa.nombre, 'se-va')}
+                            className="btn-secondary py-1 px-2 text-xs"
+                          >
+                            Se va →
+                          </button>
+                        ) : null}
+
+                        {etapa.fechaLlegada ? (
+                          <span className="text-gray-500">
+                            ✓ Llegó: {format(new Date(etapa.fechaLlegada), 'dd/MM/yyyy HH:mm')}
+                            {etapa.descripcionLlegada && ` · ${etapa.descripcionLlegada}`}
+                          </span>
+                        ) : etapa.fechaSalida && puedeGestionarEnvio ? (
+                          <button
+                            onClick={() => abrirEventoModal(prenda.id, etapa.nombre, 'llego')}
+                            className="btn-secondary py-1 px-2 text-xs"
+                          >
+                            ✓ Llegó
+                          </button>
+                        ) : null}
+                      </div>
                     )}
                   </div>
                 );
@@ -372,6 +422,47 @@ export default function DetallePedido() {
           <button onClick={() => setModalEliminar(false)} className="btn-secondary">Cancelar</button>
         </div>
         {eliminar.isError && <p className="text-red-400 text-sm mt-2">{eliminar.error?.response?.data?.error}</p>}
+      </Modal>
+
+      {/* Modal Se va / Llegó */}
+      <Modal
+        open={!!eventoModal}
+        onClose={() => setEventoModal(null)}
+        title={eventoModal?.tipo === 'se-va' ? 'Registrar salida' : 'Registrar llegada'}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="label">Fecha *</label>
+            <input className="input" type="date" value={eventoFecha} onChange={(e) => setEventoFecha(e.target.value)} required />
+          </div>
+          <div>
+            <label className="label">Descripción</label>
+            <textarea
+              className="input h-20 resize-none"
+              value={eventoDescripcion}
+              onChange={(e) => setEventoDescripcion(e.target.value)}
+              placeholder="Detalles opcionales..."
+            />
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => registrarEvento.mutate({
+                prendaId: eventoModal.prendaId,
+                etapa: eventoModal.etapaNombre,
+                tipo: eventoModal.tipo,
+                fecha: eventoFecha,
+                descripcion: eventoDescripcion,
+              })}
+              disabled={registrarEvento.isPending || !eventoFecha}
+              className="btn-primary"
+            >
+              {registrarEvento.isPending ? 'Guardando...' : 'Confirmar'}
+            </button>
+            <button onClick={() => setEventoModal(null)} className="btn-secondary">Cancelar</button>
+          </div>
+          {registrarEvento.isError && <p className="text-red-400 text-sm">{registrarEvento.error?.response?.data?.error}</p>}
+        </div>
       </Modal>
     </div>
   );

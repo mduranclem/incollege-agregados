@@ -12,11 +12,12 @@ import EditarPedido from './pages/EditarPedido';
 import Usuarios from './pages/Usuarios';
 import Reportes from './pages/Reportes';
 
-function PrivateRoute({ children, roles }) {
+function PrivateRoute({ children, roles, emails }) {
   const { usuario, loading } = useAuth();
   if (loading) return <div className="flex items-center justify-center h-screen"><div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>;
   if (!usuario) return <Navigate to="/login" replace />;
   if (roles && !roles.includes(usuario.rol)) return <Navigate to="/" replace />;
+  if (emails && !emails.includes(usuario.email)) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -34,7 +35,7 @@ function AppRoutes() {
         <Route path="pedidos/:id" element={<DetallePedido />} />
         <Route path="pedidos/:id/editar" element={<PrivateRoute roles={['VENDEDOR', 'ADMINISTRADOR', 'GERENTE']}><EditarPedido /></PrivateRoute>} />
         <Route path="usuarios" element={<PrivateRoute roles={['GERENTE']}><Usuarios /></PrivateRoute>} />
-        <Route path="reportes" element={<PrivateRoute roles={['ADMINISTRADOR', 'GERENTE']}><Reportes /></PrivateRoute>} />
+        <Route path="reportes" element={<PrivateRoute emails={['valeriaclementi3@gmail.com']}><Reportes /></PrivateRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
