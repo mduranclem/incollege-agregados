@@ -23,7 +23,7 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email y contraseña requeridos' });
 
-  const usuario = await prisma.usuario.findUnique({ where: { email } });
+  const usuario = await prisma.usuario.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
   if (!usuario || !usuario.activo) return res.status(401).json({ error: 'Credenciales inválidas' });
 
   const ok = await bcrypt.compare(password, usuario.password);
