@@ -24,18 +24,9 @@ router.post('/login', async (req, res) => {
   if (!email || !password) return res.status(400).json({ error: 'Email y contraseña requeridos' });
 
   const usuario = await prisma.usuario.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
-  console.log('[LOGIN DEBUG]', {
-    emailRecibido: JSON.stringify(email),
-    largoEmailRecibido: email.length,
-    encontrado: !!usuario,
-    emailEnDB: usuario ? JSON.stringify(usuario.email) : null,
-    activo: usuario?.activo,
-    eliminado: usuario?.eliminado,
-  });
   if (!usuario || !usuario.activo) return res.status(401).json({ error: 'Credenciales inválidas' });
 
   const ok = await bcrypt.compare(password, usuario.password);
-  console.log('[LOGIN DEBUG] passwordMatch:', ok);
   if (!ok) return res.status(401).json({ error: 'Credenciales inválidas' });
 
   const payload = { id: usuario.id, nombre: usuario.nombre, email: usuario.email, rol: usuario.rol, localPrincipal: usuario.localPrincipal };
